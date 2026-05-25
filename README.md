@@ -90,7 +90,7 @@ Access at `http://YOUR_SERVER_IP:8088`
 ### 1. Clone
 
 ```bash
-git clone https://github.com/YOURUSER/cyberbabasab.git
+git clone https://github.com/cyberbabacool/cyberbabasab.git
 cd cyberbabasab
 ```
 
