@@ -45,7 +45,7 @@ Create a `docker-compose.yml`:
 services:
   cyberbabasab-backend:
     container_name: cyberbabasab-backend
-    image: YOURUSER/cyberbabasab-backend:latest
+    image: cyberbabacool/cyberbabasab-backend:latest
     restart: unless-stopped
     environment:
       - SAB_URL=http://YOUR_SABNZBD_IP:8080
@@ -58,7 +58,7 @@ services:
 
   cyberbabasab-frontend:
     container_name: cyberbabasab-frontend
-    image: YOURUSER/cyberbabasab-frontend:latest
+    image: cyberbabacool/cyberbabasab-frontend:latest
     restart: unless-stopped
     depends_on:
       - cyberbabasab-backend
