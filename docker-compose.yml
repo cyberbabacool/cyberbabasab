@@ -1,24 +1,27 @@
 services:
-  nebula-backend:
-    container_name: nebula-backend
-    build:
-      context: ./backend
+  cyberbabasab-backend:
+    container_name: cyberbabasab-backend
+    image: cyberbabasab-backend:latest
+    pull_policy: never
     restart: unless-stopped
-    environment:
-      - SABNZBD_URL=http://192.168.16.2:8080
-      - SABNZBD_API_KEY=0fcabfed21484eb6a9a2203f92bb2101
-      - PORT=3000
+    env_file: .env
     ports:
-      - "3000:3000"
+      - "3001:3000"
+    networks:
+      - cyberbabasab
 
-  nebula-frontend:
-    container_name: nebula-frontend
-    build:
-      context: ./frontend
+  cyberbabasab-frontend:
+    container_name: cyberbabasab-frontend
+    image: cyberbabasab-frontend:latest
+    pull_policy: never
     restart: unless-stopped
     depends_on:
-      - nebula-backend
-    environment:
-      - VITE_API_URL=/api
+      - cyberbabasab-backend
     ports:
-      - "5173:5173"
+      - "8088:80"
+    networks:
+      - cyberbabasab
+
+networks:
+  cyberbabasab:
+    driver: bridge
