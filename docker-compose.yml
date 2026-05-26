@@ -2,7 +2,6 @@ services:
   cyberbabasab-backend:
     container_name: cyberbabasab-backend
     image: cyberbabacool/cyberbabasab-backend:latest
-    pull_policy: never
     restart: unless-stopped
     ports:
       - "3001:3000"
