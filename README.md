@@ -44,7 +44,7 @@ Create a `docker-compose.yml`:
 ```yaml
 services:
   cyberbabasab-backend:
-    container_name: cyberbabasab-backend
+    container_name: nebula-backend
     image: cyberbabacool/cyberbabasab-backend:latest
     restart: unless-stopped
     environment:
@@ -57,7 +57,7 @@ services:
       - cyberbabasab
 
   cyberbabasab-frontend:
-    container_name: cyberbabasab-frontend
+    container_name: nebula-frontend
     image: cyberbabacool/cyberbabasab-frontend:latest
     restart: unless-stopped
     depends_on:
