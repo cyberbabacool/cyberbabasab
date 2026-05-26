@@ -1,6 +1,6 @@
 services:
   cyberbabasab-backend:
-    container_name: cyberbabasab-backend
+    container_name: nebula-backend
     image: cyberbabasab-backend:latest
     pull_policy: never
     restart: unless-stopped
@@ -11,7 +11,7 @@ services:
       - cyberbabasab
 
   cyberbabasab-frontend:
-    container_name: cyberbabasab-frontend
+    container_name: nebula-frontend
     image: cyberbabasab-frontend:latest
     pull_policy: never
     restart: unless-stopped
