@@ -1,6 +1,6 @@
 services:
   cyberbabasab-backend:
-    container_name: nebula-backend
+    container_name: cyberbabasab-backend
     image: cyberbabacool/cyberbabasab-backend:latest
     pull_policy: never
     restart: unless-stopped
@@ -10,11 +10,11 @@ services:
       - cyberbabasab
 
   cyberbabasab-frontend:
-    container_name: nebula-frontend
+    container_name: cyberbabasab-frontend
     image: cyberbabacool/cyberbabasab-frontend:latest
     restart: unless-stopped
     depends_on:
-      - nebula-backend
+      - cyberbabasab-backend
     ports:
       - "8088:80"
     networks:
