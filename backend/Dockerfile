@@ -9,6 +9,8 @@ COPY src/ ./src/
 
 ENV NODE_ENV=production
 
+VOLUME ["/config"]
+
 EXPOSE 3000
 
 CMD ["npx", "tsx", "src/index.ts"]

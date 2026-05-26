@@ -1,11 +1,13 @@
-import { Activity, List, History, Server, Tag, Clock, Rss, Settings, Sliders, X } from 'lucide-react'
+import { Activity, List, History, Server, Tag, Clock, Rss, Settings, Sliders, X, LogOut } from 'lucide-react'
 import type { Page } from '../App'
 import { usePrefs } from '../hooks/usePrefs'
+import { useAuth } from '../hooks/useAuth'
 
 interface Props { current: Page; onNavigate: (p: Page) => void; onClose?: () => void }
 
 export function Sidebar({ current, onNavigate, onClose }: Props) {
   const { prefs, t } = usePrefs()
+  const { logout, username } = useAuth()
 
   const items: { label: string; icon: typeof Activity; page: Page }[] = [
     { label: t.nav_dashboard,   icon: Activity, page: 'dashboard'   },
@@ -20,19 +22,15 @@ export function Sidebar({ current, onNavigate, onClose }: Props) {
   ]
 
   return (
-    <aside className={`w-64 h-full flex flex-col shrink-0 border-r ${
-      prefs.theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-950 border-slate-800'
-    }`}>
-      <div className={`p-5 border-b flex items-center justify-between gap-3 ${
-        prefs.theme === 'light' ? 'border-slate-200' : 'border-slate-800'
-      }`}>
+    <aside className={`w-64 h-full flex flex-col shrink-0 border-r ${ prefs.theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-950 border-slate-800' }`}>
+      <div className={`p-5 border-b flex items-center justify-between gap-3 ${ prefs.theme === 'light' ? 'border-slate-200' : 'border-slate-800' }`}>
         <div className="flex items-center gap-3 min-w-0">
           <img src={prefs.logoUrl} alt={prefs.appName}
             className="w-8 h-8 rounded-lg object-contain shrink-0"
             onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
           <div className="min-w-0">
             <div className="text-base font-black leading-tight truncate" style={{ color: 'var(--accent)' }}>{prefs.appName}</div>
-            <div className={`text-xs ${prefs.theme === 'light' ? 'text-slate-400' : 'text-slate-600'}`}>SABnzbd Interface</div>
+            <div className={`text-xs ${ prefs.theme === 'light' ? 'text-slate-400' : 'text-slate-600' }`}>SABnzbd Interface</div>
           </div>
         </div>
         {onClose && (
@@ -47,13 +45,7 @@ export function Sidebar({ current, onNavigate, onClose }: Props) {
           const active = current === item.page
           return (
             <button key={item.page} onClick={() => onNavigate(item.page)}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
-                active
-                  ? 'font-semibold'
-                  : prefs.theme === 'light'
-                    ? 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-                    : 'text-slate-400 hover:bg-slate-900 hover:text-white'
-              }`}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${ active ? '' : prefs.theme === 'light' ? 'text-slate-500 hover:bg-slate-100 hover:text-slate-900' : 'text-slate-400 hover:bg-slate-900 hover:text-white' }`}
               style={active ? { backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' } : {}}>
               <Icon size={16} />
               {item.label}
@@ -61,6 +53,15 @@ export function Sidebar({ current, onNavigate, onClose }: Props) {
           )
         })}
       </nav>
+      <div className={`p-3 border-t ${ prefs.theme === 'light' ? 'border-slate-200' : 'border-slate-800' }`}>
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="text-xs text-slate-500 truncate">{username}</div>
+          <button onClick={logout} title="Deconnexion"
+            className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-slate-800 transition-colors">
+            <LogOut size={14} />
+          </button>
+        </div>
+      </div>
     </aside>
   )
 }
