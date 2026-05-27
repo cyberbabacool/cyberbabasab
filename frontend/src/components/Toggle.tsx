@@ -12,14 +12,21 @@ export function Toggle({ value, onChange, disabled }: ToggleProps) {
       aria-checked={value}
       onClick={() => !disabled && onChange(!value)}
       disabled={disabled}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
-        value ? 'bg-[var(--accent)]' : 'bg-slate-700'
-      }`}
+      style={{ backgroundColor: value ? 'var(--accent)' : '#334155' }}
+      className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50"
     >
       <span
-        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-          value ? 'translate-x-5' : 'translate-x-0'
-        }`}
+        style={{
+          transform: value ? 'translateX(20px)' : 'translateX(2px)',
+          position: 'absolute',
+          top: '2px',
+          width: '20px',
+          height: '20px',
+          borderRadius: '50%',
+          backgroundColor: 'white',
+          transition: 'transform 200ms ease-in-out',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        }}
       />
     </button>
   )
