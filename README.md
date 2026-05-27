@@ -18,13 +18,12 @@ A modern, full-featured web interface for SABnzbd, built with React + TypeScript
 
 <img width="1227" height="876" alt="Image" src="https://github.com/user-attachments/assets/7ee22bad-f7a1-4524-87dc-20d6f4fe4951" />
 
-
 ## Features
 
 - Secure login with first-launch setup (username + password, bcrypt hashed, JWT cookie)
 - Real-time dashboard with analog speed gauge and live queue
-- Full queue management (pause, resume, rename, reorder, delete, priority, view files)
-- Complete history with search and retry
+- Full queue management (pause, resume, timed pause, rename, reorder, search, sort, delete, priority, view files)
+- Complete history with search and retry failed jobs
 - Usenet server management (add, edit, delete, test connection)
 - Category management (add, edit, delete)
 - Schedule / planning
@@ -37,20 +36,29 @@ A modern, full-featured web interface for SABnzbd, built with React + TypeScript
 - Customizable app name, logo (used as favicon and title) and accent color
 - Mobile-friendly with slide-in sidebar
 - Browser notifications on job complete / failure
+- Change password from the preferences page
 
-## Quick Start with Docker Hub
+## Quick Start
 
-Create a `docker-compose.yml`:
+### Option 1 - Docker CLI
 
+Create a `docker-compose.yml` and a `.env` file in the same folder:
+
+**docker-compose.yml**
 ```yaml
 services:
   cyberbabasab-backend:
     container_name: cyberbabasab-backend
     image: cyberbabacool/cyberbabasab-backend:latest
     restart: unless-stopped
-    env_file: .env
+    environment:
+      - PORT=3000
+      - SAB_URL=${SAB_URL}
+      - SAB_API_KEY=${SAB_API_KEY}
+      - CONFIG_PATH=/config/auth.json
+      - JWT_SECRET=${JWT_SECRET}
     ports:
-      - "3001:3000"
+      - "${BACKEND_PORT:-3001}:3000"
     volumes:
       - cyberbabasab-config:/config
     networks:
@@ -63,7 +71,7 @@ services:
     depends_on:
       - cyberbabasab-backend
     ports:
-      - "8088:80"
+      - "${FRONTEND_PORT:-8088}:80"
     networks:
       - cyberbabasab
 
@@ -75,21 +83,41 @@ networks:
     driver: bridge
 ```
 
-Create a `.env` file:
-
+**.env**
 ```env
 SAB_URL=http://YOUR_SABNZBD_IP:8080
 SAB_API_KEY=YOUR_API_KEY_HERE
-PORT=3000
-JWT_SECRET=change-me-to-a-random-secret-string
-CONFIG_PATH=/config/auth.json
+JWT_SECRET=CHANGE_ME_TO_A_RANDOM_SECRET
+# Optional - default ports shown below
+BACKEND_PORT=3001
+FRONTEND_PORT=8088
+```
+
+Generate a secure JWT_SECRET:
+```bash
+openssl rand -hex 32
 ```
 
 Then:
-
 ```bash
 docker compose up -d
 ```
+
+### Option 2 - Portainer (Web editor)
+
+1. Portainer > Stacks > Add stack > **Web editor**
+2. Paste the `docker-compose.yml` above
+3. Scroll down to **Environment variables** and add:
+
+| Name | Value |
+|------|-------|
+| SAB_URL | http://YOUR_SABNZBD_IP:8080 |
+| SAB_API_KEY | your SABnzbd API key |
+| JWT_SECRET | a random string (openssl rand -hex 32) |
+
+4. Click **Deploy the stack**
+
+> The `${VAR}` syntax in the compose file is replaced by Portainer using the values you enter in the Environment variables section. No `.env` file needed.
 
 Access at `http://YOUR_SERVER_IP:8088`
 
@@ -113,13 +141,8 @@ cd cyberbabasab
 
 ```bash
 cp .env.example .env
-# Edit .env with your SABnzbd URL, API key, and a random JWT_SECRET
-```
-
-Generate a secure JWT_SECRET:
-
-```bash
-openssl rand -hex 32
+# Edit .env with your values
+openssl rand -hex 32  # use this as JWT_SECRET
 ```
 
 ### 3. Build Docker images
@@ -135,8 +158,6 @@ docker build -t cyberbabacool/cyberbabasab-frontend:latest ./frontend
 docker compose up -d
 ```
 
-Or deploy via Portainer: Stacks > Add stack > Web editor.
-
 ## Authentication
 
 On first launch, CyberbabaSAB shows a setup page where you choose your username and password.
@@ -144,14 +165,18 @@ The password is hashed with bcrypt (cost 12) and stored in a Docker volume (`/co
 Authentication uses httpOnly JWT cookies valid for 7 days.
 All API routes are protected - unauthenticated requests return HTTP 401.
 A logout button is available at the bottom of the sidebar.
+Password can be changed from the Preferences page.
 
 To reset credentials, delete the config volume:
 
 ```bash
 docker compose down
-docker volume rm cyberbabasab_cyberbabasab-config
+docker volume rm STACKNAME_cyberbabasab-config
 docker compose up -d
 ```
+
+> Replace `STACKNAME` with your Portainer stack name or the folder name if using Docker CLI.
+> To find the exact volume name: `docker volume ls | grep cyberbabasab`
 
 ## Nginx Reverse Proxy (optional)
 
@@ -180,13 +205,14 @@ server {
 
 ## Environment Variables
 
-| Variable      | Description                               | Example                    |
-|---------------|-------------------------------------------|----------------------------|
-| SAB_URL       | SABnzbd base URL (no trailing /)          | http://192.168.1.10:8080   |
-| SAB_API_KEY   | SABnzbd API key                           | abc123...                  |
-| PORT          | Backend internal port                     | 3000                       |
-| JWT_SECRET    | Secret for JWT signing (keep private)     | random hex string          |
-| CONFIG_PATH   | Path to auth config inside container      | /config/auth.json          |
+| Variable | Description | Example |
+|----------|-------------|---------|
+| SAB_URL | SABnzbd base URL (no trailing /) | http://192.168.1.10:8080 |
+| SAB_API_KEY | SABnzbd API key | abc123... |
+| JWT_SECRET | Secret for JWT signing (keep private) | random hex string |
+| CONFIG_PATH | Path to auth config inside container | /config/auth.json |
+| BACKEND_PORT | Host port for the backend (optional) | 3001 |
+| FRONTEND_PORT | Host port for the frontend (optional) | 8088 |
 
 ## Project Structure
 
@@ -219,14 +245,14 @@ cyberbabasab/
         LoginPage.tsx
         SetupPage.tsx
         DashboardPage.tsx
-        QueuePage.tsx
-        HistoryPage.tsx
+        QueuePage.tsx       - Search, sort, timed pause, bulk priority
+        HistoryPage.tsx     - Search, retry, retry all failed
         ServersPage.tsx
         CategoriesPage.tsx
         SchedulePage.tsx
         RssPage.tsx
         SettingsPage.tsx
-        PreferencesPage.tsx
+        PreferencesPage.tsx - Theme, lang, branding, password change
       widgets/
         SpeedWidget.tsx
         StatsWidget.tsx
@@ -254,6 +280,7 @@ All UI preferences are stored in browser localStorage (no server restart needed)
 - Compact mode
 - Speed unit (MB/s or KB/s)
 - Browser notifications on job complete / failure
+- Change password
 
 ## License
 
