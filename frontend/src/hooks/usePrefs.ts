@@ -68,6 +68,19 @@ export function usePrefsStore() {
 }
 
 function applyTheme(prefs: Prefs) {
+  // Update page title
+  document.title = prefs.appName || 'CyberbabaSAB'
+
+  // Update favicon
+  const logoUrl = prefs.logoUrl || '/logo.png'
+  let link = document.querySelector<HTMLLinkElement>('link[rel~="icon"]')
+  if (!link) {
+    link = document.createElement('link') as HTMLLinkElement
+    link.rel = 'icon'
+    document.head.appendChild(link)
+  }
+  link.href = logoUrl
+
   const root = document.documentElement
   const accent = ACCENT_VARS[prefs.accent]
   root.style.setProperty('--accent', accent.primary)

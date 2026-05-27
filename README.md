@@ -6,22 +6,10 @@ A modern, full-featured web interface for SABnzbd, built with React + TypeScript
 ![Docker](https://img.shields.io/badge/Docker-ready-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-<img width="1248" height="675" alt="Image" src="https://github.com/user-attachments/assets/bec24dd2-c51f-4e80-90fa-5a5e58b3d6ad" />
-
-<img width="1244" height="787" alt="Image" src="https://github.com/user-attachments/assets/438111fd-2dbe-4bf0-b4db-efd0a8b76ce4" />
-
-<img width="1258" height="534" alt="Image" src="https://github.com/user-attachments/assets/aca80384-ef62-4e64-9c27-f47d4f3aaed7" />
-
-<img width="1251" height="624" alt="Image" src="https://github.com/user-attachments/assets/706f9e1c-b415-4ff9-a17e-8e3cc92803b0" />
-
-<img width="1240" height="869" alt="Image" src="https://github.com/user-attachments/assets/315f2afa-a01d-4b63-a57f-362869e634af" />
-
-<img width="1227" height="876" alt="Image" src="https://github.com/user-attachments/assets/7ee22bad-f7a1-4524-87dc-20d6f4fe4951" />
-
-
 ## Features
 
-- Real-time dashboard with analog speed gauge
+- Secure login with first-launch setup (username + password, bcrypt hashed, JWT cookie)
+- Real-time dashboard with analog speed gauge and live queue
 - Full queue management (pause, resume, rename, reorder, delete, priority, view files)
 - Complete history with search and retry
 - Usenet server management (add, edit, delete, test connection)
@@ -33,7 +21,7 @@ A modern, full-featured web interface for SABnzbd, built with React + TypeScript
 - Multi-language: French, English, Spanish, Italian, German
 - Dark / Light theme
 - 5 accent colors (cyan, violet, green, orange, rose)
-- Customizable app name and logo
+- Customizable app name, logo (used as favicon and title) and accent color
 - Mobile-friendly with slide-in sidebar
 - Browser notifications on job complete / failure
 
@@ -44,20 +32,19 @@ Create a `docker-compose.yml`:
 ```yaml
 services:
   cyberbabasab-backend:
-    container_name: nebula-backend
+    container_name: cyberbabasab-backend
     image: cyberbabacool/cyberbabasab-backend:latest
     restart: unless-stopped
-    environment:
-      - SAB_URL=http://YOUR_SABNZBD_IP:8080
-      - SAB_API_KEY=YOUR_API_KEY
-      - PORT=3000
+    env_file: .env
     ports:
       - "3001:3000"
+    volumes:
+      - cyberbabasab-config:/config
     networks:
       - cyberbabasab
 
   cyberbabasab-frontend:
-    container_name: nebula-frontend
+    container_name: cyberbabasab-frontend
     image: cyberbabacool/cyberbabasab-frontend:latest
     restart: unless-stopped
     depends_on:
@@ -67,9 +54,22 @@ services:
     networks:
       - cyberbabasab
 
+volumes:
+  cyberbabasab-config:
+
 networks:
   cyberbabasab:
     driver: bridge
+```
+
+Create a `.env` file:
+
+```env
+SAB_URL=http://YOUR_SABNZBD_IP:8080
+SAB_API_KEY=YOUR_API_KEY_HERE
+PORT=3000
+JWT_SECRET=change-me-to-a-random-secret-string
+CONFIG_PATH=/config/auth.json
 ```
 
 Then:
@@ -79,6 +79,8 @@ docker compose up -d
 ```
 
 Access at `http://YOUR_SERVER_IP:8088`
+
+On first access, a setup page will ask you to create your username and password.
 
 ## Build from Source
 
@@ -98,23 +100,47 @@ cd cyberbabasab
 
 ```bash
 cp .env.example .env
-# Edit .env with your SABnzbd URL and API key
+# Edit .env with your SABnzbd URL, API key, and a random JWT_SECRET
+```
+
+Generate a secure JWT_SECRET:
+
+```bash
+openssl rand -hex 32
 ```
 
 ### 3. Build Docker images
 
 ```bash
-docker build -t cyberbabasab-backend:latest ./backend
-docker build -t cyberbabasab-frontend:latest ./frontend
+docker build -t cyberbabacool/cyberbabasab-backend:latest ./backend
+docker build -t cyberbabacool/cyberbabasab-frontend:latest ./frontend
 ```
 
 ### 4. Deploy
 
-Use the `docker-compose.yml` at the root, or deploy via Portainer (Stacks > Add stack > Web editor).
+```bash
+docker compose up -d
+```
+
+Or deploy via Portainer: Stacks > Add stack > Web editor.
+
+## Authentication
+
+On first launch, CyberbabaSAB shows a setup page where you choose your username and password.
+The password is hashed with bcrypt (cost 12) and stored in a Docker volume (`/config/auth.json`).
+Authentication uses httpOnly JWT cookies valid for 7 days.
+All API routes are protected - unauthenticated requests return HTTP 401.
+A logout button is available at the bottom of the sidebar.
+
+To reset credentials, delete the config volume:
+
+```bash
+docker compose down
+docker volume rm cyberbabasab_cyberbabasab-config
+docker compose up -d
+```
 
 ## Nginx Reverse Proxy (optional)
-
-To expose via a domain with HTTPS:
 
 ```nginx
 server {
@@ -139,15 +165,15 @@ server {
 }
 ```
 
-The `/api/` proxy to the backend is handled internally by the frontend container.
-
 ## Environment Variables
 
-| Variable      | Description                        | Example                        |
-|---------------|------------------------------------|--------------------------------|
-| SAB_URL       | SABnzbd base URL (no trailing /)   | http://192.168.1.10:8080       |
-| SAB_API_KEY   | SABnzbd API key                    | abc123...                      |
-| PORT          | Backend internal port              | 3000                           |
+| Variable      | Description                               | Example                    |
+|---------------|-------------------------------------------|----------------------------|
+| SAB_URL       | SABnzbd base URL (no trailing /)          | http://192.168.1.10:8080   |
+| SAB_API_KEY   | SABnzbd API key                           | abc123...                  |
+| PORT          | Backend internal port                     | 3000                       |
+| JWT_SECRET    | Secret for JWT signing (keep private)     | random hex string          |
+| CONFIG_PATH   | Path to auth config inside container      | /config/auth.json          |
 
 ## Project Structure
 
@@ -156,8 +182,10 @@ cyberbabasab/
   backend/
     src/
       index.ts              - Express server + Socket.IO
+      auth.ts               - JWT auth, bcrypt, setup/login logic
       routes/
-        sab.routes.ts       - All API routes
+        sab.routes.ts       - SABnzbd API routes (protected)
+        auth.routes.ts      - Auth routes (setup, login, logout)
       services/
         sab.service.ts      - SABnzbd API client
     package.json
@@ -166,16 +194,32 @@ cyberbabasab/
   frontend/
     src/
       App.tsx
+      main.tsx              - Applies stored theme/title/favicon before render
       i18n.ts               - Translations (fr/en/es/it/de)
-      components/           - Shared components
+      components/
+        Toggle.tsx          - Reusable toggle switch
       hooks/
         useSab.ts           - SABnzbd data hooks
-        usePrefs.ts         - User preferences
-      pages/                - Dashboard, Queue, History, Servers...
-      widgets/              - SpeedWidget, StatsWidget
+        usePrefs.ts         - User preferences (theme, lang, title, favicon)
+        useAuth.ts          - Auth state and API calls
+      pages/
+        LoginPage.tsx
+        SetupPage.tsx
+        DashboardPage.tsx
+        QueuePage.tsx
+        HistoryPage.tsx
+        ServersPage.tsx
+        CategoriesPage.tsx
+        SchedulePage.tsx
+        RssPage.tsx
+        SettingsPage.tsx
+        PreferencesPage.tsx
+      widgets/
+        SpeedWidget.tsx
+        StatsWidget.tsx
     public/
-      logo.png              - Replace with your logo
-    nginx.conf              - Nginx config inside Docker
+      logo.png              - Replace with your logo (used as favicon)
+    nginx.conf
     package.json
     vite.config.ts
     Dockerfile
@@ -185,17 +229,18 @@ cyberbabasab/
 
 ## Customization
 
-All UI preferences are stored in browser localStorage:
+All UI preferences are stored in browser localStorage (no server restart needed):
 
 - Dark / Light theme
-- Accent color
-- Language
-- App name and logo URL
+- Accent color (cyan, violet, green, orange, rose)
+- Language (fr, en, es, it, de)
+- App name (used as browser tab title)
+- Logo URL (used as favicon and sidebar logo)
 - Refresh interval (1s to 10s)
 - Number of jobs shown on dashboard
 - Compact mode
 - Speed unit (MB/s or KB/s)
-- Browser notifications
+- Browser notifications on job complete / failure
 
 ## License
 

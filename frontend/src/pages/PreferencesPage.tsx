@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Check, RefreshCw } from 'lucide-react'
 import { usePrefs, ACCENT_VARS } from '../hooks/usePrefs'
+import { useAuth } from '../hooks/useAuth'
 import type { AccentColor, ThemeMode, SpeedUnit } from '../hooks/usePrefs'
 import { LANG_LABELS } from '../i18n'
 import type { Lang } from '../i18n'
@@ -23,11 +24,30 @@ export function PreferencesPage() {
   const { prefs, update, reset, t } = usePrefs()
   const [saved, setSaved] = useState(false)
   const [logoPreview, setLogoPreview] = useState(prefs.logoUrl)
+  const { changePassword, username } = useAuth()
+  const [curPw, setCurPw] = useState('')
+  const [newPw, setNewPw] = useState('')
+  const [confirmPw, setConfirmPw] = useState('')
+  const [pwError, setPwError] = useState('')
+  const [pwOk, setPwOk] = useState(false)
 
   const save = () => {
     update({ logoUrl: logoPreview })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  const handleChangePassword = async () => {
+    setPwError('')
+    setPwOk(false)
+    if (!curPw) { setPwError('Mot de passe actuel requis'); return }
+    if (newPw.length < 8) { setPwError('Nouveau mot de passe : 8 caracteres minimum'); return }
+    if (newPw !== confirmPw) { setPwError('Les mots de passe ne correspondent pas'); return }
+    const err = await changePassword(curPw, newPw)
+    if (err) { setPwError(err); return }
+    setPwOk(true)
+    setCurPw(''); setNewPw(''); setConfirmPw('')
+    setTimeout(() => setPwOk(false), 3000)
   }
 
   const requestNotifPermission = async () => {
@@ -220,6 +240,37 @@ export function PreferencesPage() {
             </button>
           </div>
         ))}
+      </div>
+
+
+      {/* Mot de passe */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 space-y-4">
+        <div className="text-xs uppercase tracking-widest text-slate-500">Securite</div>
+        <div className="text-sm text-slate-400">Connecte en tant que <span className="text-white font-semibold">{username}</span></div>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-slate-500 block mb-1">Mot de passe actuel</label>
+            <input type="password" value={curPw} onChange={e => setCurPw(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--accent)]" />
+          </div>
+          <div>
+            <label className="text-xs text-slate-500 block mb-1">Nouveau mot de passe (8 min)</label>
+            <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--accent)]" />
+          </div>
+          <div>
+            <label className="text-xs text-slate-500 block mb-1">Confirmer le nouveau mot de passe</label>
+            <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--accent)]" />
+          </div>
+          {pwError && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-4 py-2.5 rounded-xl">{pwError}</div>}
+          {pwOk && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-4 py-2.5 rounded-xl">Mot de passe modifie !</div>}
+          <button onClick={handleChangePassword}
+            className="px-5 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-sm font-semibold transition-colors">
+            Modifier le mot de passe
+          </button>
+        </div>
       </div>
 
       <button onClick={save}
