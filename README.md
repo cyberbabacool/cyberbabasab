@@ -6,6 +6,19 @@ A modern, full-featured web interface for SABnzbd, built with React + TypeScript
 ![Docker](https://img.shields.io/badge/Docker-ready-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+<img width="1248" height="675" alt="Image" src="https://github.com/user-attachments/assets/bec24dd2-c51f-4e80-90fa-5a5e58b3d6ad" />
+
+<img width="1244" height="787" alt="Image" src="https://github.com/user-attachments/assets/438111fd-2dbe-4bf0-b4db-efd0a8b76ce4" />
+
+<img width="1258" height="534" alt="Image" src="https://github.com/user-attachments/assets/aca80384-ef62-4e64-9c27-f47d4f3aaed7" />
+
+<img width="1251" height="624" alt="Image" src="https://github.com/user-attachments/assets/706f9e1c-b415-4ff9-a17e-8e3cc92803b0" />
+
+<img width="1240" height="869" alt="Image" src="https://github.com/user-attachments/assets/315f2afa-a01d-4b63-a57f-362869e634af" />
+
+<img width="1227" height="876" alt="Image" src="https://github.com/user-attachments/assets/7ee22bad-f7a1-4524-87dc-20d6f4fe4951" />
+
+
 ## Features
 
 - Secure login with first-launch setup (username + password, bcrypt hashed, JWT cookie)
