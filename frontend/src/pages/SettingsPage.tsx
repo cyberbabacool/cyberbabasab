@@ -43,8 +43,18 @@ function TextInput({ value, onSave, mono = false, placeholder = '' }: { value: s
 function Toggle({ value, onSave }: { value: boolean; onSave: (v: boolean) => void }) {
   return (
     <button onClick={() => onSave(!value)}
-      className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ${value ? 'bg-cyan-500' : 'bg-slate-700'}`}>
-      <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${value ? 'translate-x-5' : 'translate-x-0.5'}`} />
+      style={{
+        display: 'flex', alignItems: 'center', width: '44px', height: '24px',
+        borderRadius: '12px', padding: '2px', border: 'none', cursor: 'pointer',
+        backgroundColor: value ? 'var(--accent)' : '#475569',
+        transition: 'background-color 200ms', boxSizing: 'border-box', flexShrink: 0, outline: 'none',
+      }}>
+      <span style={{
+        display: 'block', width: '20px', height: '20px', borderRadius: '50%',
+        backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+        transition: 'transform 200ms ease-in-out', flexShrink: 0,
+        transform: value ? 'translateX(20px)' : 'translateX(0px)',
+      }} />
     </button>
   )
 }
