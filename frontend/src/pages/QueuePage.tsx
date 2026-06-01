@@ -35,10 +35,8 @@ export function QueuePage() {
   const [changingCat, setChangingCat] = useState<string | null>(null)
   const [catVal, setCatVal] = useState('')
 
-  if (error) return <div className="text-red-400 p-4">{error}</div>
-  if (!data)  return <div className="text-slate-500 p-4">Chargement...</div>
-
   const sortedSlots = useMemo(() => {
+    if (!data) return []
     let slots: QueueSlot[] = [...(data.slots ?? [])]
     if (search) slots = slots.filter(s =>
       s.filename.toLowerCase().includes(search.toLowerCase()) ||
@@ -56,7 +54,10 @@ export function QueuePage() {
       })
     }
     return slots
-  }, [data.slots, search, sortBy, sortAsc])
+  }, [data, search, sortBy, sortAsc])
+
+  if (error) return <div className="text-red-400 p-4">{error}</div>
+  if (!data)  return <div className="text-slate-500 p-4">Chargement...</div>
 
   const startRename = (slot: QueueSlot) => { setRenaming(slot.nzo_id); setRenameVal(slot.filename) }
   const confirmRename = (id: string) => { renameJob(id, renameVal); setRenaming(null) }
