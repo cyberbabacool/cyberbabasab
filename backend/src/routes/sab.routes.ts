@@ -75,4 +75,13 @@ router.get('/restart',  h(() => sab.restart()))
 router.get('/pause_pp', h(() => sab.pausePostProcessing()))
 router.get('/resume_pp', h(() => sab.resumePostProcessing()))
 
+
+router.get('/pause-timed',        h((req) => sab.pauseTimed(Number(req.query.minutes) || 30)))
+router.get('/queue/pause-all',    h(() => sab.pauseAllJobs()))
+router.get('/queue/resume-all',   h(() => sab.resumeAllJobs()))
+router.get('/queue/priority-all', h((req) => sab.setPriorityAll(Number(req.query.value))))
+router.get('/history/retry-all',  h(() => sab.retryAllFailed()))
+router.get('/stats',              h(() => sab.getStats()))
+router.get('/purge',              h((req) => sab.purgeQueue(Number(req.query.del_files) || 0)))
+
 export default router

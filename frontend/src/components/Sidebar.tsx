@@ -1,4 +1,4 @@
-import { Activity, List, History, Server, Tag, Clock, Rss, Settings, Sliders, X, LogOut } from 'lucide-react'
+import { Activity, List, History, Server, Tag, Clock, Rss, Settings, Sliders, X, LogOut, BarChart2 } from 'lucide-react'
 import type { Page } from '../App'
 import { usePrefs } from '../hooks/usePrefs'
 import { useAuth } from '../hooks/useAuth'
@@ -19,6 +19,7 @@ export function Sidebar({ current, onNavigate, onClose }: Props) {
     { label: t.nav_rss,         icon: Rss,      page: 'rss'         },
     { label: t.nav_settings,    icon: Settings, page: 'settings'    },
     { label: t.nav_preferences, icon: Sliders,  page: 'preferences' },
+    { label: 'Stats',           icon: BarChart2, page: 'stats'       },
   ]
 
   return (

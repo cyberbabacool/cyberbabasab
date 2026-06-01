@@ -10,12 +10,13 @@ import { SchedulePage } from './pages/SchedulePage'
 import { RssPage } from './pages/RssPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { PreferencesPage } from './pages/PreferencesPage'
+import { StatsPage } from './pages/StatsPage'
 import { LoginPage } from './pages/LoginPage'
 import { SetupPage } from './pages/SetupPage'
 import { PrefsContext, usePrefsStore } from './hooks/usePrefs'
 import { AuthContext, useAuthStore } from './hooks/useAuth'
 
-export type Page = 'dashboard' | 'queue' | 'history' | 'servers' | 'categories' | 'schedule' | 'rss' | 'settings' | 'preferences'
+export type Page = 'dashboard' | 'queue' | 'history' | 'servers' | 'categories' | 'schedule' | 'rss' | 'settings' | 'preferences' | 'stats'
 
 export default function App() {
   const [page, setPage] = useState<Page>('dashboard')
@@ -82,6 +83,7 @@ export default function App() {
               {page === 'rss'         && <RssPage />}
               {page === 'settings'    && <SettingsPage />}
               {page === 'preferences' && <PreferencesPage />}
+              {page === 'stats'       && <StatsPage />}
             </main>
           </div>
         </div>
