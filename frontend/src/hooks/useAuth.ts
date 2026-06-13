@@ -10,6 +10,7 @@ export interface AuthContextType {
   setup: (username: string, password: string) => Promise<string | null>
   logout: () => Promise<void>
   changePassword: (current: string, next: string) => Promise<string | null>
+  forceLogout: () => void
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null)
@@ -27,6 +28,15 @@ export function useAuthStore(): AuthContextType {
         setState('authenticated')
       }).catch(() => setState('login'))
     }).catch(() => setState('login'))
+  }, [])
+
+  useEffect(() => {
+    const handler = () => {
+      setState(s => s === 'authenticated' ? 'login' : s)
+      setUsername('')
+    }
+    window.addEventListener('cbs:unauthorized', handler)
+    return () => window.removeEventListener('cbs:unauthorized', handler)
   }, [])
 
   const login = async (u: string, p: string): Promise<string | null> => {
@@ -57,6 +67,11 @@ export function useAuthStore(): AuthContextType {
     setUsername('')
   }
 
+  const forceLogout = () => {
+    setState('login')
+    setUsername('')
+  }
+
   const changePassword = async (current: string, next: string): Promise<string | null> => {
     try {
       await axios.post('/auth/change-password', { currentPassword: current, newPassword: next })
@@ -66,5 +81,5 @@ export function useAuthStore(): AuthContextType {
     }
   }
 
-  return { state, username, login, setup, logout, changePassword }
+  return { state, username, login, setup, logout, changePassword, forceLogout }
 }

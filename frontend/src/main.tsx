@@ -1,7 +1,19 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import axios from 'axios'
 import App from './App'
 import './index.css'
+
+// Global axios interceptor: on 401, notify the app to show the login screen
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    if (error?.response?.status === 401) {
+      window.dispatchEvent(new CustomEvent('cbs:unauthorized'))
+    }
+    return Promise.reject(error)
+  }
+)
 
 // Apply stored preferences before first render
 function applyStoredPrefs() {
@@ -10,12 +22,10 @@ function applyStoredPrefs() {
     if (!raw) return
     const prefs = JSON.parse(raw)
 
-    // Title
     if (prefs.appName) {
       document.title = prefs.appName
     }
 
-    // Favicon
     const logoUrl = prefs.logoUrl || '/logo.png'
     const link = document.querySelector<HTMLLinkElement>('link[rel~="icon"]')
       || document.createElement('link') as HTMLLinkElement
@@ -23,7 +33,6 @@ function applyStoredPrefs() {
     link.href = logoUrl
     document.head.appendChild(link)
 
-    // Accent color
     if (prefs.accent) {
       const accents: Record<string, string[]> = {
         cyan:   ['#22d3ee', 'rgba(34,211,238,0.1)',  'rgba(34,211,238,0.2)'],
@@ -40,7 +49,6 @@ function applyStoredPrefs() {
       }
     }
 
-    // Light mode
     if (prefs.theme === 'light') {
       document.documentElement.classList.add('light-mode')
     }
@@ -48,6 +56,13 @@ function applyStoredPrefs() {
 }
 
 applyStoredPrefs()
+
+// Register service worker for PWA support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

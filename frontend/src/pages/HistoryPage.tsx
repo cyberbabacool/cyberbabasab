@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { CheckCircle, XCircle, Clock, Trash2, RefreshCw, Search, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react'
 import { useHistory } from '../hooks/useSab'
+import { ConfirmDialog } from '../components/ConfirmDialog'
+import { useToast } from '../hooks/useToast'
 
 const STATUS_COLORS: Record<string, string> = {
   Completed: 'text-emerald-400', Failed: 'text-red-400',
@@ -9,23 +11,36 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function HistoryPage() {
   const { data, error, loading, refresh, deleteItem, retryItem, retryAll } = useHistory(200)
+  const { toast } = useToast()
   const [search, setSearch] = useState('')
   const [deleting, setDeleting] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [retryingAll, setRetryingAll] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const filtered = data.filter(s => s.name.toLowerCase().includes(search.toLowerCase()))
   const failedCount = data.filter(s => s.status === 'Failed').length
 
   const handleDelete = async (id: string) => {
     setDeleting(id)
-    try { await deleteItem(id) } catch {}
+    try {
+      await deleteItem(id)
+      toast('Entree supprimee', 'success')
+    } catch {
+      toast('Erreur lors de la suppression', 'error')
+    }
     setDeleting(null)
+    setConfirmDeleteId(null)
   }
 
   const handleRetryAll = async () => {
     setRetryingAll(true)
-    try { await retryAll() } catch {}
+    try {
+      await retryAll()
+      toast('Tous les echecs ont ete relances', 'success')
+    } catch {
+      toast('Erreur lors du retry', 'error')
+    }
     setRetryingAll(false)
   }
 
@@ -98,12 +113,12 @@ export function HistoryPage() {
                           </button>
                         )}
                         {failed && (
-                          <button onClick={() => retryItem(slot.nzo_id)} title="Relancer"
+                          <button onClick={() => { retryItem(slot.nzo_id); toast('Job relance', 'success') }} title="Relancer"
                             className="p-1.5 rounded-lg text-slate-600 hover:text-amber-400 hover:bg-slate-800">
                             <RotateCcw size={14} />
                           </button>
                         )}
-                        <button onClick={() => handleDelete(slot.nzo_id)} disabled={isDeleting}
+                        <button onClick={() => setConfirmDeleteId(slot.nzo_id)} disabled={isDeleting}
                           className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-slate-800 disabled:opacity-40">
                           <Trash2 size={14} />
                         </button>
@@ -132,6 +147,16 @@ export function HistoryPage() {
           )
         }
       </div>
+
+      {confirmDeleteId && (
+        <ConfirmDialog
+          title="Supprimer l'entree"
+          message="Cette entree sera definitivement supprimee de l'historique."
+          confirmLabel="Supprimer"
+          onConfirm={() => handleDelete(confirmDeleteId)}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
     </div>
   )
 }

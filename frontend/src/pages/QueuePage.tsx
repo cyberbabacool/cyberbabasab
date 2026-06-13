@@ -4,6 +4,8 @@ import { useQueue } from '../hooks/useSab'
 import { NzbDropzone } from '../components/NzbDropzone'
 import { AddNzbModal } from '../components/AddNzbModal'
 import { JobFilesModal } from '../components/JobFilesModal'
+import { ConfirmDialog } from '../components/ConfirmDialog'
+import { useToast } from '../hooks/useToast'
 import type { QueueSlot } from '../hooks/useSab'
 
 const PRIORITIES: Record<string, string> = { '-100': 'Default', '-2': 'Pause', '-1': 'Low', '0': 'Normal', '1': 'High', '2': 'Force' }
@@ -21,6 +23,9 @@ const PAUSE_DURATIONS = [15, 30, 60, 120, 240]
 export function QueuePage() {
   const { data, error, pause, resume, pauseTimed, pauseJob, resumeJob, deleteJob, moveJob,
     changeCat, renameJob, purge, setPrioAll, setSpeed } = useQueue()
+  const { toast } = useToast()
+  const [confirmPurgeFiles, setConfirmPurgeFiles] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [filesFor, setFilesFor] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -56,11 +61,20 @@ export function QueuePage() {
     return slots
   }, [data, search, sortBy, sortAsc])
 
+  const run = async (action: () => Promise<any>, successMsg?: string) => {
+    try {
+      await action()
+      if (successMsg) toast(successMsg, 'success')
+    } catch {
+      toast('Une erreur est survenue', 'error')
+    }
+  }
+
   if (error) return <div className="text-red-400 p-4">{error}</div>
   if (!data)  return <div className="text-slate-500 p-4">Chargement...</div>
 
   const startRename = (slot: QueueSlot) => { setRenaming(slot.nzo_id); setRenameVal(slot.filename) }
-  const confirmRename = (id: string) => { renameJob(id, renameVal); setRenaming(null) }
+  const confirmRenameJob = (id: string) => { run(() => renameJob(id, renameVal), 'Job renomme'); setRenaming(null) }
   const pauseInt = data.pause_int ? parseInt(data.pause_int) : 0
 
   return (
@@ -84,8 +98,8 @@ export function QueuePage() {
           <div className="relative">
             <div className="flex">
               {data.paused
-                ? <button onClick={resume} className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-sm font-semibold">Reprendre</button>
-                : <button onClick={pause} className="px-3 py-1.5 rounded-l-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-sm font-semibold">Pause</button>
+                ? <button onClick={() => run(resume, 'Telechargements repris')} className="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-sm font-semibold">Reprendre</button>
+                : <button onClick={() => run(pause, 'Telechargements en pause')} className="px-3 py-1.5 rounded-l-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-sm font-semibold">Pause</button>
               }
               {!data.paused && (
                 <button onClick={e => { e.stopPropagation(); setShowPauseMenu(!showPauseMenu) }}
@@ -97,7 +111,7 @@ export function QueuePage() {
             {showPauseMenu && !data.paused && (
               <div className="absolute top-full mt-1 right-0 bg-slate-900 border border-slate-700 rounded-xl p-2 z-20 min-w-36">
                 {PAUSE_DURATIONS.map(m => (
-                  <button key={m} onClick={() => { pauseTimed(m); setShowPauseMenu(false) }}
+                  <button key={m} onClick={() => { run(() => pauseTimed(m), `Pause de ${m} min activee`); setShowPauseMenu(false) }}
                     className="flex w-full text-left px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 rounded-lg">
                     Pause {m} min
                   </button>
@@ -114,7 +128,7 @@ export function QueuePage() {
             {showPrioMenu && (
               <div className="absolute top-full mt-1 right-0 bg-slate-900 border border-slate-700 rounded-xl p-2 z-20 min-w-40">
                 {[['2','Force'], ['1','Haute'], ['0','Normale'], ['-1','Basse'], ['-2','Pause']].map(([v, l]) => (
-                  <button key={v} onClick={() => { setPrioAll(parseInt(v)); setShowPrioMenu(false) }}
+                  <button key={v} onClick={() => { run(() => setPrioAll(parseInt(v)), `Priorite globale: ${l}`); setShowPrioMenu(false) }}
                     className="flex w-full text-left px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 rounded-lg">
                     Tout en {l}
                   </button>
@@ -133,11 +147,11 @@ export function QueuePage() {
               </button>
               {showPurgeMenu && (
                 <div className="absolute top-full mt-1 right-0 bg-slate-900 border border-slate-700 rounded-xl p-2 z-20 min-w-48">
-                  <button onClick={() => { purge(0); setShowPurgeMenu(false) }}
+                  <button onClick={() => { run(() => purge(0), 'Queue videe'); setShowPurgeMenu(false) }}
                     className="flex w-full text-left px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 rounded-lg">
                     Vider (garder fichiers)
                   </button>
-                  <button onClick={() => { purge(1); setShowPurgeMenu(false) }}
+                  <button onClick={() => { setConfirmPurgeFiles(true); setShowPurgeMenu(false) }}
                     className="flex w-full text-left px-3 py-1.5 text-sm text-red-400 hover:bg-slate-800 rounded-lg">
                     Vider + supprimer fichiers
                   </button>
@@ -192,9 +206,9 @@ export function QueuePage() {
                       {isRenaming ? (
                         <div className="flex gap-2 mb-1">
                           <input autoFocus value={renameVal} onChange={e => setRenameVal(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') confirmRename(slot.nzo_id); if (e.key === 'Escape') setRenaming(null) }}
+                            onKeyDown={e => { if (e.key === 'Enter') confirmRenameJob(slot.nzo_id); if (e.key === 'Escape') setRenaming(null) }}
                             className="flex-1 bg-slate-800 border border-cyan-500 rounded-lg px-3 py-1 text-sm text-white focus:outline-none" />
-                          <button onClick={() => confirmRename(slot.nzo_id)} className="text-emerald-400"><Check size={16} /></button>
+                          <button onClick={() => confirmRenameJob(slot.nzo_id)} className="text-emerald-400"><Check size={16} /></button>
                           <button onClick={() => setRenaming(null)} className="text-slate-500"><X size={16} /></button>
                         </div>
                       ) : (
@@ -203,9 +217,9 @@ export function QueuePage() {
                       {isChangingCat ? (
                         <div className="flex gap-2 mb-1">
                           <input autoFocus value={catVal} onChange={e => setCatVal(e.target.value)} placeholder="Categorie"
-                            onKeyDown={e => { if (e.key === 'Enter') { changeCat(slot.nzo_id, catVal); setChangingCat(null) } if (e.key === 'Escape') setChangingCat(null) }}
+                            onKeyDown={e => { if (e.key === 'Enter') { run(() => changeCat(slot.nzo_id, catVal), 'Categorie modifiee'); setChangingCat(null) } if (e.key === 'Escape') setChangingCat(null) }}
                             className="flex-1 bg-slate-800 border border-cyan-500 rounded-lg px-3 py-1 text-sm text-white focus:outline-none" />
-                          <button onClick={() => { changeCat(slot.nzo_id, catVal); setChangingCat(null) }} className="text-emerald-400"><Check size={16} /></button>
+                          <button onClick={() => { run(() => changeCat(slot.nzo_id, catVal), 'Categorie modifiee'); setChangingCat(null) }} className="text-emerald-400"><Check size={16} /></button>
                           <button onClick={() => setChangingCat(null)} className="text-slate-500"><X size={16} /></button>
                         </div>
                       ) : (
@@ -225,11 +239,11 @@ export function QueuePage() {
                         className="p-1.5 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-slate-800"><Edit2 size={14} /></button>
                       <button onClick={() => { setChangingCat(slot.nzo_id); setCatVal(slot.cat) }} title="Categorie"
                         className="p-1.5 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-slate-800"><Tag size={14} /></button>
-                      <button onClick={() => isPaused ? resumeJob(slot.nzo_id) : pauseJob(slot.nzo_id)}
+                      <button onClick={() => run(() => isPaused ? resumeJob(slot.nzo_id) : pauseJob(slot.nzo_id))}
                         className="p-1.5 rounded-lg text-slate-600 hover:text-amber-400 hover:bg-slate-800">
                         {isPaused ? <Play size={14} /> : <Pause size={14} />}
                       </button>
-                      <button onClick={() => deleteJob(slot.nzo_id)}
+                      <button onClick={() => setConfirmDeleteId(slot.nzo_id)}
                         className="p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-slate-800"><Trash2 size={14} /></button>
                     </div>
                   </div>
@@ -246,6 +260,26 @@ export function QueuePage() {
 
       {showAdd && <AddNzbModal onClose={() => setShowAdd(false)} />}
       {filesFor && <JobFilesModal nzo_id={filesFor} onClose={() => setFilesFor(null)} />}
+
+      {confirmPurgeFiles && (
+        <ConfirmDialog
+          title="Vider la queue"
+          message="Tous les jobs seront supprimes de la queue ET leurs fichiers temporaires seront effaces du disque. Cette action est irreversible."
+          confirmLabel="Vider et supprimer"
+          onConfirm={() => { run(() => purge(1), 'Queue videe et fichiers supprimes'); setConfirmPurgeFiles(false) }}
+          onCancel={() => setConfirmPurgeFiles(false)}
+        />
+      )}
+
+      {confirmDeleteId && (
+        <ConfirmDialog
+          title="Supprimer le job"
+          message="Ce job sera retire de la queue et ses fichiers temporaires seront supprimes."
+          confirmLabel="Supprimer"
+          onConfirm={() => { run(() => deleteJob(confirmDeleteId), 'Job supprime'); setConfirmDeleteId(null) }}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
     </div>
   )
 }
