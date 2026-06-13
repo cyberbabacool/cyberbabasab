@@ -22,12 +22,13 @@ A modern, full-featured web interface for SABnzbd, built with React + TypeScript
 
 - Secure login with first-launch setup (username + password, bcrypt hashed, JWT cookie)
 - Real-time dashboard with analog speed gauge and live queue
-- Full queue management (pause, resume, timed pause, rename, reorder, search, sort, delete, priority, view files)
-- Complete history with search and retry failed jobs
+- Full queue management: pause, resume, timed pause (15/30/60/120/240 min), rename, reorder, search, sort (name/size/progress/priority/category), delete, bulk priority, view files
+- Complete history with search, retry, retry-all-failed, and expandable post-processing logs
+- Statistics page: daily/weekly/monthly/total download totals, 24h hourly chart, per-server connection stats
+- Full RSS management: add/edit/delete feeds, ordered filters (accept/reject/must-contain/category-required/series), read feed now, enable/disable
 - Usenet server management (add, edit, delete, test connection)
 - Category management (add, edit, delete)
 - Schedule / planning
-- RSS feeds
 - All SABnzbd settings configurable from the UI
 - NZB upload by drag & drop, URL, or local path
 - Multi-language: French, English, Spanish, Italian, German
@@ -37,6 +38,9 @@ A modern, full-featured web interface for SABnzbd, built with React + TypeScript
 - Mobile-friendly with slide-in sidebar
 - Browser notifications on job complete / failure
 - Change password from the preferences page
+- Toast notifications for all actions, with confirmation dialogs before destructive operations
+- Automatic redirect to login on session expiry
+- Installable as a PWA (Progressive Web App) on desktop and mobile
 
 ## Quick Start
 
@@ -233,24 +237,27 @@ cyberbabasab/
   frontend/
     src/
       App.tsx
-      main.tsx              - Applies stored theme/title/favicon before render
+      main.tsx              - Theme/title/favicon, axios 401 interceptor, SW registration
       i18n.ts               - Translations (fr/en/es/it/de)
       components/
         Toggle.tsx          - Reusable toggle switch
+        ConfirmDialog.tsx   - Confirmation modal for destructive actions
       hooks/
-        useSab.ts           - SABnzbd data hooks
+        useSab.ts           - SABnzbd data hooks (queue, history, config, status, stats)
         usePrefs.ts         - User preferences (theme, lang, title, favicon)
-        useAuth.ts          - Auth state and API calls
+        useAuth.ts          - Auth state, API calls, session expiry handling
+        useToast.tsx        - Toast notification system
       pages/
         LoginPage.tsx
         SetupPage.tsx
         DashboardPage.tsx
-        QueuePage.tsx       - Search, sort, timed pause, bulk priority
-        HistoryPage.tsx     - Search, retry, retry all failed
+        QueuePage.tsx       - Search, sort, timed pause, bulk priority, confirmations
+        HistoryPage.tsx     - Search, retry, retry-all, expandable logs, confirmations
+        StatsPage.tsx       - Download totals and per-server stats
         ServersPage.tsx
         CategoriesPage.tsx
         SchedulePage.tsx
-        RssPage.tsx
+        RssPage.tsx         - Full feed and filter management
         SettingsPage.tsx
         PreferencesPage.tsx - Theme, lang, branding, password change
       widgets/
@@ -258,6 +265,8 @@ cyberbabasab/
         StatsWidget.tsx
     public/
       logo.png              - Replace with your logo (used as favicon)
+      manifest.json         - PWA manifest
+      sw.js                 - Service worker
     nginx.conf
     package.json
     vite.config.ts
@@ -281,6 +290,16 @@ All UI preferences are stored in browser localStorage (no server restart needed)
 - Speed unit (MB/s or KB/s)
 - Browser notifications on job complete / failure
 - Change password
+
+## PWA Installation
+
+CyberbabaSAB can be installed as a standalone app:
+
+- **Desktop (Chrome/Edge)**: click the install icon in the address bar, or browser menu > Install CyberbabaSAB
+- **Android (Chrome)**: menu > Add to Home screen
+- **iOS (Safari)**: Share button > Add to Home Screen
+
+Once installed, it opens in its own window without browser UI. API and auth requests always go to the network (never cached), so data is always live.
 
 ## License
 
