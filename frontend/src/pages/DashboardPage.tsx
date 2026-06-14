@@ -10,25 +10,33 @@ interface Props { onNavigate: (p: Page) => void }
 function SpeedGauge({ kbpersec, maxMbps = 150 }: { kbpersec: string; maxMbps?: number }) {
   const speedMbps = parseFloat(kbpersec) / 1024
   const pct = Math.min(speedMbps / maxMbps, 1)
-  const R = 80, cx = 100, cy = 105
-  const startAngle = Math.PI
-  const endAngle = 2 * Math.PI
-  const angle = startAngle + pct * (endAngle - startAngle)
-  const x1 = cx + R * Math.cos(startAngle)
-  const y1 = cy + R * Math.sin(startAngle)
-  const x2 = cx + R * Math.cos(endAngle)
-  const y2 = cy + R * Math.sin(endAngle)
+  const R = 70, cx = 100, cy = 90, sw = 10
+  // Demi-cercle de PI (gauche) a 2*PI (droite)
+  const x1 = cx - R  // point gauche
+  const y1 = cy      // y du centre
+  const x2 = cx + R  // point droit
+  const y2 = cy
+  // Point courant sur l'arc
+  const angle = Math.PI + pct * Math.PI
   const px = cx + R * Math.cos(angle)
   const py = cy + R * Math.sin(angle)
   const arcFlag = pct > 0.5 ? 1 : 0
   const mbps = speedMbps.toFixed(1)
   return (
-    <svg viewBox="0 0 200 120" className="w-full max-w-xs mx-auto">
-      <path d={`M ${x1} ${y1} A ${R} ${R} 0 1 1 ${x2} ${y2}`} fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round" />
-      {pct > 0 && <path d={`M ${x1} ${y1} A ${R} ${R} 0 ${arcFlag} 1 ${px} ${py}`} fill="none" stroke="var(--accent)" strokeWidth="12" strokeLinecap="round" />}
-      <circle cx={px} cy={py} r="6" fill="white" />
-      <text x={cx} y={cy - 10} textAnchor="middle" fill="white" fontSize="22" fontWeight="bold">{mbps}</text>
-      <text x={cx} y={cy + 10} textAnchor="middle" fill="#64748b" fontSize="10">MB/s</text>
+    <svg viewBox="0 0 200 105" className="w-full max-w-xs mx-auto" overflow="visible">
+      {/* Arc de fond */}
+      <path d={`M ${x1} ${y1} A ${R} ${R} 0 0 1 ${x2} ${y2}`}
+        fill="none" stroke="#1e293b" strokeWidth={sw} strokeLinecap="round" />
+      {/* Arc de progression */}
+      {pct > 0 && (
+        <path d={`M ${x1} ${y1} A ${R} ${R} 0 ${arcFlag} 1 ${px} ${py}`}
+          fill="none" stroke="var(--accent)" strokeWidth={sw} strokeLinecap="round" />
+      )}
+      {/* Curseur */}
+      <circle cx={px} cy={py} r={sw / 2 + 1} fill="white" />
+      {/* Texte vitesse */}
+      <text x={cx} y={cy + 8} textAnchor="middle" fill="white" fontSize="26" fontWeight="bold">{mbps}</text>
+      <text x={cx} y={cy + 22} textAnchor="middle" fill="#64748b" fontSize="10">MB/s</text>
     </svg>
   )
 }
