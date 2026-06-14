@@ -4,6 +4,7 @@ import { useQueue } from '../hooks/useSab'
 import { NzbDropzone } from '../components/NzbDropzone'
 import { AddNzbModal } from '../components/AddNzbModal'
 import { JobFilesModal } from '../components/JobFilesModal'
+import { CatBadge } from '../components/useCategoryColors'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { useToast } from '../hooks/useToast'
 import type { QueueSlot } from '../hooks/useSab'
@@ -227,7 +228,7 @@ export function QueuePage() {
                           <span className={isPaused ? 'text-amber-400' : 'text-emerald-400'}>{slot.status}</span>
                           <span>{slot.sizeleft} / {slot.size}</span>
                           <span>ETA: {slot.timeleft}</span>
-                          <span className="flex items-center gap-1"><Tag size={10} />{slot.cat || 'Default'}</span>
+                          <CatBadge cat={slot.cat} />
                           <span className={PRIO_COLORS[slot.priority] ?? ''}>{PRIORITIES[slot.priority] ?? slot.priority}</span>
                         </div>
                       )}

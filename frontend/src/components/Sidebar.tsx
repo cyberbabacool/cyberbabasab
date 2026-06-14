@@ -1,4 +1,5 @@
 import { Activity, List, History, Server, Tag, Clock, Rss, Settings, Sliders, X, LogOut, BarChart2 } from 'lucide-react'
+import { ConnectionStatus } from './ConnectionStatus'
 import type { Page } from '../App'
 import { usePrefs } from '../hooks/usePrefs'
 import { useAuth } from '../hooks/useAuth'
@@ -54,7 +55,10 @@ export function Sidebar({ current, onNavigate, onClose }: Props) {
           )
         })}
       </nav>
-      <div className={`p-3 border-t ${ prefs.theme === 'light' ? 'border-slate-200' : 'border-slate-800' }`}>
+      <div className={`px-3 pt-2 pb-1 border-t ${ prefs.theme === 'light' ? 'border-slate-200' : 'border-slate-800' }`}>
+        <div className="px-3 py-2 mb-1">
+          <ConnectionStatus />
+        </div>
         <div className="flex items-center justify-between px-3 py-2">
           <div className="text-xs text-slate-500 truncate">{username}</div>
           <button onClick={logout} title="Deconnexion"
