@@ -23,7 +23,7 @@ export const setCompleteAction = (value: string) => sabGet({ mode: 'change_compl
 
 export const pauseJob    = (nzo_id: string) => sabGet({ mode: 'queue', name: 'pause',  value: nzo_id })
 export const resumeJob   = (nzo_id: string) => sabGet({ mode: 'queue', name: 'resume', value: nzo_id })
-export const deleteJob   = (nzo_ids: string, del_files = 0) => sabGet({ mode: 'queue', name: 'delete', nzo_ids, del_files })
+export const deleteJob   = (nzo_id: string, del_files = 0) => sabGet({ mode: 'queue', name: 'delete', value: nzo_id, del_files })
 export const purgeQueue  = () => sabGet({ mode: 'purge' })
 export const moveJob     = (nzo_id: string, position: number) => sabGet({ mode: 'switch', value: nzo_id, value2: position })
 export const changeCat   = (nzo_id: string, value: string) => sabGet({ mode: 'change_cat', value: nzo_id, value2: value })
