@@ -1,31 +1,44 @@
-import { useState } from 'react'
-import { X, Link, HardDrive, Upload } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { X, Link, Upload, FileText } from 'lucide-react'
 import axios from 'axios'
 
 interface Props { onClose: () => void }
 
 export function AddNzbModal({ onClose }: Props) {
-  const [tab, setTab] = useState<'url' | 'local'>('url')
+  const [tab, setTab] = useState<'url' | 'file'>('url')
   const [url, setUrl] = useState('')
-  const [local, setLocal] = useState('')
+  const [file, setFile] = useState<File | null>(null)
   const [cat, setCat] = useState('')
   const [status, setStatus] = useState<'idle' | 'ok' | 'error'>('idle')
   const [msg, setMsg] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const submit = async () => {
     try {
       if (tab === 'url') {
+        if (!url) { setStatus('error'); setMsg('Merci de renseigner une URL'); return }
         await axios.get(`/api/addurl?url=${encodeURIComponent(url)}&cat=${encodeURIComponent(cat)}`)
       } else {
-        await axios.get(`/api/addlocal?name=${encodeURIComponent(local)}&cat=${encodeURIComponent(cat)}`)
+        if (!file) { setStatus('error'); setMsg('Merci de selectionner un fichier'); return }
+        const formData = new FormData()
+        formData.append('nzbfile', file)
+        if (cat) formData.append('cat', cat)
+        await axios.post('/api/addnzb', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
       }
       setStatus('ok')
       setMsg('Ajoute avec succes !')
       setTimeout(onClose, 1500)
     } catch (e: any) {
       setStatus('error')
-      setMsg(e.message)
+      setMsg(e.response?.data?.error ?? e.message)
     }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (f) setFile(f)
   }
 
   return (
@@ -37,7 +50,7 @@ export function AddNzbModal({ onClose }: Props) {
         </div>
         <div className="p-6 space-y-5">
           <div className="flex gap-2">
-            {([['url', 'Par URL', Link], ['local', 'Chemin local', HardDrive]] as const).map(([key, label, Icon]) => (
+            {([['url', 'Par URL', Link], ['file', 'Fichier local', Upload]] as const).map(([key, label, Icon]) => (
               <button key={key} onClick={() => setTab(key)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                   tab === key ? 'bg-cyan-500/10 text-cyan-400' : 'bg-slate-800 text-slate-400 hover:text-white'
@@ -46,23 +59,39 @@ export function AddNzbModal({ onClose }: Props) {
               </button>
             ))}
           </div>
-          <div>
-            <label className="text-xs text-slate-500 uppercase tracking-widest block mb-2">
-              {tab === 'url' ? 'URL du NZB' : 'Chemin complet du fichier'}
-            </label>
-            <input value={tab === 'url' ? url : local}
-              onChange={e => tab === 'url' ? setUrl(e.target.value) : setLocal(e.target.value)}
-              placeholder={tab === 'url' ? 'https://...' : '/chemin/vers/fichier.nzb'}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-cyan-500" />
-          </div>
+
+          {tab === 'url' ? (
+            <div>
+              <label className="text-xs text-slate-500 uppercase tracking-widest block mb-2">URL du NZB</label>
+              <input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-cyan-500" />
+            </div>
+          ) : (
+            <div>
+              <label className="text-xs text-slate-500 uppercase tracking-widest block mb-2">Fichier .nzb</label>
+              <input ref={fileInputRef} type="file" accept=".nzb" onChange={handleFileChange} className="hidden" />
+              <button onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center gap-3 bg-slate-800 border border-slate-700 border-dashed rounded-xl px-4 py-3 text-sm text-slate-300 hover:border-cyan-500 hover:text-white transition-colors">
+                <FileText size={16} className="shrink-0" />
+                {file ? (
+                  <span className="truncate">{file.name}</span>
+                ) : (
+                  <span className="text-slate-500">Cliquez pour parcourir...</span>
+                )}
+              </button>
+            </div>
+          )}
+
           <div>
             <label className="text-xs text-slate-500 uppercase tracking-widest block mb-2">Categorie (optionnel)</label>
             <input value={cat} onChange={e => setCat(e.target.value)} placeholder="Default"
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500" />
           </div>
+
           {msg && (
             <div className={`text-sm px-4 py-2 rounded-xl ${status === 'ok' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>{msg}</div>
           )}
+
           <button onClick={submit}
             className="w-full py-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 font-semibold text-sm flex items-center justify-center gap-2">
             <Upload size={16} /> Ajouter

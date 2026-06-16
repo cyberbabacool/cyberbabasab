@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Pause, Play, HardDrive, Clock, Download, Zap, Maximize, Minimize } from 'lucide-react'
+import { Pause, Play, HardDrive, Clock, Download, Zap, Maximize, Minimize, GripVertical, RotateCcw } from 'lucide-react'
 import { useQueue } from '../hooks/useSab'
 import type { Page } from '../App'
 import { NzbDropzone } from '../components/NzbDropzone'
 import { AddNzbModal } from '../components/AddNzbModal'
+import { useSpeedHistory, SpeedSparkline } from '../components/SpeedHistory'
+import { useDashboardLayout, type TileId } from '../hooks/useDashboardLayout'
 
 interface Props { onNavigate: (p: Page) => void }
 
@@ -11,9 +13,6 @@ function SpeedGauge({ kbpersec, maxMbps = 150 }: { kbpersec: string; maxMbps?: n
   const speedMbps = parseFloat(kbpersec) / 1024
   const pct = Math.min(speedMbps / maxMbps, 1)
   const R = 70, cx = 100, cy = 90, sw = 10
-  // Demi-cercle par le haut: de gauche (30,90) a droite (170,90) via (100,20)
-  // angle PI+pct*PI trace le demi-cercle superieur en sens horaire SVG (sweep=1)
-  // L'arc de progression fait toujours <= 180 deg -> largeArc toujours 0
   const x1 = cx - R, y1 = cy
   const x2 = cx + R, y2 = cy
   const angle = Math.PI + pct * Math.PI
@@ -22,10 +21,8 @@ function SpeedGauge({ kbpersec, maxMbps = 150 }: { kbpersec: string; maxMbps?: n
   const mbps = speedMbps.toFixed(1)
   return (
     <svg viewBox="0 0 200 110" className="w-full max-w-xs mx-auto">
-      {/* Arc fond: sweep=1 (horaire SVG) -> passe par le haut */}
       <path d={`M ${x1} ${y1} A ${R} ${R} 0 0 1 ${x2} ${y2}`}
         fill="none" stroke="#1e293b" strokeWidth={sw} strokeLinecap="round" />
-      {/* Arc prog: largeArc toujours 0 car <= 180deg */}
       {pct > 0 && (
         <path d={`M ${x1} ${y1} A ${R} ${R} 0 0 1 ${px} ${py}`}
           fill="none" stroke="var(--accent)" strokeWidth={sw} strokeLinecap="round" />
@@ -59,10 +56,91 @@ export function DashboardPage({ onNavigate }: Props) {
   const { data, pause, resume } = useQueue()
   const [showAdd, setShowAdd] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
+  const speedPoints = useSpeedHistory(data?.kbpersec ?? '0')
+  const { order, dragId, onDragStart, onDragOver, onDragEnd, resetLayout } = useDashboardLayout()
 
   if (!data) return <div className="text-slate-500 p-4">Chargement...</div>
 
   const topJobs = (data.slots ?? []).slice(0, 5)
+
+  const TileWrapper = ({ id, children }: { id: TileId; children: React.ReactNode }) => (
+    <div
+      draggable
+      onDragStart={() => onDragStart(id)}
+      onDragOver={e => onDragOver(e, id)}
+      onDragEnd={onDragEnd}
+      className={`rounded-2xl border border-slate-800 bg-slate-900/70 p-5 transition-opacity cursor-grab active:cursor-grabbing ${ dragId === id ? 'opacity-40' : '' }`}
+    >
+      <div className="flex items-center justify-end mb-1 -mt-1">
+        <GripVertical size={14} className="text-slate-700" />
+      </div>
+      {children}
+    </div>
+  )
+
+  const tiles: Record<TileId, React.ReactNode> = {
+    speed: (
+      <>
+        <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Zap size={13} /><span className="uppercase tracking-widest">Vitesse</span></div>
+        <SpeedGauge kbpersec={data.kbpersec} />
+        <div className="text-center text-xs text-slate-500 mt-3 mb-3">
+          Limite: {data.speedlimit ? data.speedlimit + '%' : 'Aucune'}
+        </div>
+        <div className="pt-3 border-t border-slate-800">
+          <SpeedSparkline points={speedPoints} />
+        </div>
+      </>
+    ),
+    storage: (
+      <>
+        <div className="flex items-center gap-2 text-slate-500 text-xs mb-4"><HardDrive size={13} /><span className="uppercase tracking-widest">Stockage</span></div>
+        <div className="space-y-4">
+          <StorageBar used={data.diskspace1} total={data.diskspacetotal1} label="Telechargement" />
+          <StorageBar used={data.diskspace2} total={data.diskspacetotal2} label="Completions" />
+          <div className="text-xs text-slate-500">Cache: {data.cache_size}</div>
+        </div>
+      </>
+    ),
+    progress: (
+      <>
+        <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Clock size={13} /><span className="uppercase tracking-widest">Progression</span></div>
+        <div className="space-y-3">
+          <div>
+            <div className="flex justify-between text-xs text-slate-400 mb-1">
+              <span>Global</span><span>{data.mbleft} MB restants</span>
+            </div>
+            <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+              <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.min(100 - (parseFloat(data.mbleft) / Math.max(parseFloat(data.mb), 1)) * 100, 100)}%` }} />
+            </div>
+          </div>
+          <div className="text-sm font-semibold">{data.timeleft} restant</div>
+          <div className="text-xs text-slate-500">ETA: {data.eta}</div>
+        </div>
+      </>
+    ),
+    queue: (
+      <>
+        <div className="flex items-center justify-between text-slate-500 text-xs mb-3">
+          <div className="flex items-center gap-2"><Download size={13} /><span className="uppercase tracking-widest">Queue</span></div>
+          <button onClick={() => onNavigate('queue')} className="text-[var(--accent)] hover:underline">Tout voir</button>
+        </div>
+        <div className="space-y-2">
+          {topJobs.length === 0
+            ? <div className="text-slate-600 text-sm">Queue vide</div>
+            : topJobs.map(job => (
+              <div key={job.nzo_id} className="space-y-1">
+                <div className="text-xs text-slate-300 truncate">{job.filename}</div>
+                <div className="h-1 rounded-full bg-slate-800 overflow-hidden">
+                  <div className="h-full rounded-full bg-[var(--accent)]/60" style={{ width: `${job.percentage}%` }} />
+                </div>
+              </div>
+            ))
+          }
+          {data.noofslots > 5 && <div className="text-xs text-slate-600">{data.noofslots - 5} job(s) de plus</div>}
+        </div>
+      </>
+    ),
+  }
 
   return (
     <div className={fullscreen ? 'fixed inset-0 z-40 bg-slate-950 overflow-auto p-6' : 'space-y-6'}>
@@ -73,6 +151,10 @@ export function DashboardPage({ onNavigate }: Props) {
             <button onClick={() => setFullscreen(!fullscreen)}
               className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800">
               {fullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+            </button>
+            <button onClick={resetLayout} title="Reinitialiser l'agencement"
+              className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800">
+              <RotateCcw size={16} />
             </button>
           </div>
           <p className="text-slate-400 mt-1 text-sm">{data.noofslots} job(s) en queue - {data.sizeleft} restants</p>
@@ -87,57 +169,7 @@ export function DashboardPage({ onNavigate }: Props) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-          <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Zap size={13} /><span className="uppercase tracking-widest">Vitesse</span></div>
-          <SpeedGauge kbpersec={data.kbpersec} />
-          <div className="text-center text-xs text-slate-500 mt-3">
-            Limite: {data.speedlimit ? data.speedlimit + '%' : 'Aucune'}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 flex flex-col gap-4">
-          <div className="flex items-center gap-2 text-slate-500 text-xs"><HardDrive size={13} /><span className="uppercase tracking-widest">Stockage</span></div>
-          <StorageBar used={data.diskspace1} total={data.diskspacetotal1} label="Telechargement" />
-          <StorageBar used={data.diskspace2} total={data.diskspacetotal2} label="Completions" />
-          <div className="text-xs text-slate-500">Cache: {data.cache_size}</div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-          <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Clock size={13} /><span className="uppercase tracking-widest">Progression</span></div>
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-xs text-slate-400 mb-1">
-                <span>Global</span><span>{data.mbleft} MB restants</span>
-              </div>
-              <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.min(100 - (parseFloat(data.mbleft) / Math.max(parseFloat(data.mb), 1)) * 100, 100)}%` }} />
-              </div>
-            </div>
-            <div className="text-sm font-semibold">{data.timeleft} restant</div>
-            <div className="text-xs text-slate-500">ETA: {data.eta}</div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-          <div className="flex items-center justify-between text-slate-500 text-xs mb-3">
-            <div className="flex items-center gap-2"><Download size={13} /><span className="uppercase tracking-widest">Queue</span></div>
-            <button onClick={() => onNavigate('queue')} className="text-[var(--accent)] hover:underline">Tout voir</button>
-          </div>
-          <div className="space-y-2">
-            {topJobs.length === 0
-              ? <div className="text-slate-600 text-sm">Queue vide</div>
-              : topJobs.map(job => (
-                <div key={job.nzo_id} className="space-y-1">
-                  <div className="text-xs text-slate-300 truncate">{job.filename}</div>
-                  <div className="h-1 rounded-full bg-slate-800 overflow-hidden">
-                    <div className="h-full rounded-full bg-[var(--accent)]/60" style={{ width: `${job.percentage}%` }} />
-                  </div>
-                </div>
-              ))
-            }
-            {data.noofslots > 5 && <div className="text-xs text-slate-600">{data.noofslots - 5} job(s) de plus</div>}
-          </div>
-        </div>
+        {order.map(id => <TileWrapper key={id} id={id}>{tiles[id]}</TileWrapper>)}
       </div>
 
       <NzbDropzone />
