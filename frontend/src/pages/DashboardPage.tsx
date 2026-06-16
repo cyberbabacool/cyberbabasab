@@ -11,32 +11,28 @@ function SpeedGauge({ kbpersec, maxMbps = 150 }: { kbpersec: string; maxMbps?: n
   const speedMbps = parseFloat(kbpersec) / 1024
   const pct = Math.min(speedMbps / maxMbps, 1)
   const R = 70, cx = 100, cy = 90, sw = 10
-  // Demi-cercle de PI (gauche) a 2*PI (droite)
-  const x1 = cx - R  // point gauche
-  const y1 = cy      // y du centre
-  const x2 = cx + R  // point droit
-  const y2 = cy
-  // Point courant sur l'arc
+  // Demi-cercle par le haut: de gauche (30,90) a droite (170,90) via (100,20)
+  // angle PI+pct*PI trace le demi-cercle superieur en sens horaire SVG (sweep=1)
+  // L'arc de progression fait toujours <= 180 deg -> largeArc toujours 0
+  const x1 = cx - R, y1 = cy
+  const x2 = cx + R, y2 = cy
   const angle = Math.PI + pct * Math.PI
   const px = cx + R * Math.cos(angle)
   const py = cy + R * Math.sin(angle)
-  const arcFlag = pct > 0.5 ? 1 : 0
   const mbps = speedMbps.toFixed(1)
   return (
-    <svg viewBox="0 0 200 105" className="w-full max-w-xs mx-auto" overflow="visible">
-      {/* Arc de fond */}
+    <svg viewBox="0 0 200 110" className="w-full max-w-xs mx-auto">
+      {/* Arc fond: sweep=1 (horaire SVG) -> passe par le haut */}
       <path d={`M ${x1} ${y1} A ${R} ${R} 0 0 1 ${x2} ${y2}`}
         fill="none" stroke="#1e293b" strokeWidth={sw} strokeLinecap="round" />
-      {/* Arc de progression */}
+      {/* Arc prog: largeArc toujours 0 car <= 180deg */}
       {pct > 0 && (
-        <path d={`M ${x1} ${y1} A ${R} ${R} 0 ${arcFlag} 1 ${px} ${py}`}
+        <path d={`M ${x1} ${y1} A ${R} ${R} 0 0 1 ${px} ${py}`}
           fill="none" stroke="var(--accent)" strokeWidth={sw} strokeLinecap="round" />
       )}
-      {/* Curseur */}
-      <circle cx={px} cy={py} r={sw / 2 + 1} fill="white" />
-      {/* Texte vitesse */}
-      <text x={cx} y={cy + 8} textAnchor="middle" fill="white" fontSize="26" fontWeight="bold">{mbps}</text>
-      <text x={cx} y={cy + 22} textAnchor="middle" fill="#64748b" fontSize="10">MB/s</text>
+      <circle cx={px} cy={py} r={sw / 2 + 2} fill="white" />
+      <text x={cx} y={cy + 6} textAnchor="middle" fill="white" fontSize="24" fontWeight="bold">{mbps}</text>
+      <text x={cx} y={cy + 20} textAnchor="middle" fill="#64748b" fontSize="9">MB/s</text>
     </svg>
   )
 }
@@ -94,7 +90,7 @@ export function DashboardPage({ onNavigate }: Props) {
         <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
           <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Zap size={13} /><span className="uppercase tracking-widest">Vitesse</span></div>
           <SpeedGauge kbpersec={data.kbpersec} />
-          <div className="text-center text-xs text-slate-500 mt-1">
+          <div className="text-center text-xs text-slate-500 mt-3">
             Limite: {data.speedlimit ? data.speedlimit + '%' : 'Aucune'}
           </div>
         </div>
