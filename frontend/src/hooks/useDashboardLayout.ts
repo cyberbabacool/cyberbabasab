@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 
-export type TileId = 'speed' | 'storage' | 'progress' | 'queue'
+export type TileId = 'speed' | 'storage' | 'progress'
 
-const DEFAULT_ORDER: TileId[] = ['speed', 'storage', 'progress', 'queue']
+const DEFAULT_ORDER: TileId[] = ['speed', 'storage', 'progress']
 const STORAGE_KEY = 'cyberbabasab_dashboard_layout'
 
 export function useDashboardLayout() {
   const [order, setOrder] = useState<TileId[]>(DEFAULT_ORDER)
   const [dragId, setDragId] = useState<TileId | null>(null)
+  const [overId, setOverId] = useState<TileId | null>(null)
 
   useEffect(() => {
     try {
@@ -16,7 +17,7 @@ export function useDashboardLayout() {
         const parsed = JSON.parse(raw) as TileId[]
         const valid = parsed.filter(id => DEFAULT_ORDER.includes(id))
         const missing = DEFAULT_ORDER.filter(id => !valid.includes(id))
-        setOrder([...valid, ...missing])
+        if (valid.length > 0) setOrder([...valid, ...missing])
       }
     } catch {}
   }, [])
@@ -26,26 +27,38 @@ export function useDashboardLayout() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch {}
   }, [])
 
-  const onDragStart = (id: TileId) => setDragId(id)
+  const onDragStart = useCallback((id: TileId) => {
+    setDragId(id)
+  }, [])
 
-  const onDragOver = (e: React.DragEvent, overId: TileId) => {
+  const onDragOver = useCallback((e: React.DragEvent, id: TileId) => {
     e.preventDefault()
-    if (!dragId || dragId === overId) return
-    const next = [...order]
-    const fromIdx = next.indexOf(dragId)
-    const toIdx = next.indexOf(overId)
-    if (fromIdx === -1 || toIdx === -1) return
-    next.splice(fromIdx, 1)
-    next.splice(toIdx, 0, dragId)
-    setOrder(next)
-  }
+    if (id !== overId) setOverId(id)
+  }, [overId])
 
-  const onDragEnd = () => {
-    if (dragId) persist(order)
+  const onDrop = useCallback((e: React.DragEvent, dropId: TileId) => {
+    e.preventDefault()
+    setOrder(current => {
+      if (!dragId || dragId === dropId) return current
+      const next = [...current]
+      const fromIdx = next.indexOf(dragId)
+      const toIdx = next.indexOf(dropId)
+      if (fromIdx === -1 || toIdx === -1) return current
+      next.splice(fromIdx, 1)
+      next.splice(toIdx, 0, dragId)
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch {}
+      return next
+    })
     setDragId(null)
-  }
+    setOverId(null)
+  }, [dragId])
 
-  const resetLayout = () => persist(DEFAULT_ORDER)
+  const onDragEnd = useCallback(() => {
+    setDragId(null)
+    setOverId(null)
+  }, [])
 
-  return { order, dragId, onDragStart, onDragOver, onDragEnd, resetLayout }
+  const resetLayout = useCallback(() => persist(DEFAULT_ORDER), [persist])
+
+  return { order, dragId, overId, onDragStart, onDragOver, onDrop, onDragEnd, resetLayout }
 }

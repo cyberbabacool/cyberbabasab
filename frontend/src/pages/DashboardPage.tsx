@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Pause, Play, HardDrive, Clock, Download, Zap, Maximize, Minimize, GripVertical, RotateCcw } from 'lucide-react'
+import { Pause, Play, HardDrive, Clock, Download, Zap, Maximize, Minimize, GripVertical, RotateCcw, ChevronRight } from 'lucide-react'
 import { useQueue } from '../hooks/useSab'
 import type { Page } from '../App'
-import { NzbDropzone } from '../components/NzbDropzone'
 import { AddNzbModal } from '../components/AddNzbModal'
+import { PageDropZone } from '../components/PageDropZone'
 import { useSpeedHistory, SpeedSparkline } from '../components/SpeedHistory'
 import { useDashboardLayout, type TileId } from '../hooks/useDashboardLayout'
 
@@ -53,23 +53,29 @@ function StorageBar({ used, total, label }: { used: string; total: string; label
 }
 
 export function DashboardPage({ onNavigate }: Props) {
-  const { data, pause, resume } = useQueue()
+  const { data, pause, resume, refresh } = useQueue()
   const [showAdd, setShowAdd] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const speedPoints = useSpeedHistory(data?.kbpersec ?? '0')
-  const { order, dragId, onDragStart, onDragOver, onDragEnd, resetLayout } = useDashboardLayout()
+  const { order, dragId, overId, onDragStart, onDragOver, onDrop, onDragEnd, resetLayout } = useDashboardLayout()
 
   if (!data) return <div className="text-slate-500 p-4">Chargement...</div>
 
-  const topJobs = (data.slots ?? []).slice(0, 5)
+  const isActive = data.noofslots > 0
+  const jobs = data.slots ?? []
 
   const TileWrapper = ({ id, children }: { id: TileId; children: React.ReactNode }) => (
     <div
       draggable
       onDragStart={() => onDragStart(id)}
       onDragOver={e => onDragOver(e, id)}
+      onDrop={e => onDrop(e, id)}
       onDragEnd={onDragEnd}
-      className={`rounded-2xl border border-slate-800 bg-slate-900/70 p-5 transition-opacity cursor-grab active:cursor-grabbing ${ dragId === id ? 'opacity-40' : '' }`}
+      style={{
+        opacity: dragId === id ? 0.4 : 1,
+        borderColor: overId === id && dragId && dragId !== id ? 'var(--accent)' : undefined,
+      }}
+      className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 transition-all cursor-grab active:cursor-grabbing"
     >
       <div className="flex items-center justify-end mb-1 -mt-1">
         <GripVertical size={14} className="text-slate-700" />
@@ -101,7 +107,7 @@ export function DashboardPage({ onNavigate }: Props) {
         </div>
       </>
     ),
-    progress: (
+    progress: isActive ? (
       <>
         <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Clock size={13} /><span className="uppercase tracking-widest">Progression</span></div>
         <div className="space-y-3">
@@ -117,63 +123,95 @@ export function DashboardPage({ onNavigate }: Props) {
           <div className="text-xs text-slate-500">ETA: {data.eta}</div>
         </div>
       </>
-    ),
-    queue: (
+    ) : (
       <>
-        <div className="flex items-center justify-between text-slate-500 text-xs mb-3">
-          <div className="flex items-center gap-2"><Download size={13} /><span className="uppercase tracking-widest">Queue</span></div>
-          <button onClick={() => onNavigate('queue')} className="text-[var(--accent)] hover:underline">Tout voir</button>
-        </div>
-        <div className="space-y-2">
-          {topJobs.length === 0
-            ? <div className="text-slate-600 text-sm">Queue vide</div>
-            : topJobs.map(job => (
-              <div key={job.nzo_id} className="space-y-1">
-                <div className="text-xs text-slate-300 truncate">{job.filename}</div>
-                <div className="h-1 rounded-full bg-slate-800 overflow-hidden">
-                  <div className="h-full rounded-full bg-[var(--accent)]/60" style={{ width: `${job.percentage}%` }} />
-                </div>
-              </div>
-            ))
-          }
-          {data.noofslots > 5 && <div className="text-xs text-slate-600">{data.noofslots - 5} job(s) de plus</div>}
+        <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Clock size={13} /><span className="uppercase tracking-widest">Progression</span></div>
+        <div className="space-y-3">
+          <div>
+            <div className="flex justify-between text-xs text-slate-400 mb-1">
+              <span>Global</span><span>0%</span>
+            </div>
+            <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+              <div className="h-full rounded-full bg-slate-700" style={{ width: '0%' }} />
+            </div>
+          </div>
+          <div className="text-sm font-semibold text-slate-500">Inactif</div>
+          <div className="text-xs text-slate-600">Aucun telechargement en cours</div>
         </div>
       </>
     ),
   }
 
   return (
-    <div className={fullscreen ? 'fixed inset-0 z-40 bg-slate-950 overflow-auto p-6' : 'space-y-6'}>
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-4xl font-black">Dashboard</h1>
-            <button onClick={() => setFullscreen(!fullscreen)}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800">
-              {fullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-            </button>
-            <button onClick={resetLayout} title="Reinitialiser l'agencement"
-              className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800">
-              <RotateCcw size={16} />
+    <PageDropZone onUploaded={refresh}>
+      <div className={fullscreen ? 'fixed inset-0 z-40 bg-slate-950 overflow-auto p-6' : 'space-y-6'}>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-4xl font-black">Dashboard</h1>
+              <button onClick={() => setFullscreen(!fullscreen)}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800">
+                {fullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+              </button>
+              <button onClick={resetLayout} title="Reinitialiser l'agencement"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800">
+                <RotateCcw size={16} />
+              </button>
+            </div>
+            <p className="text-slate-400 mt-1 text-sm">{data.noofslots} job(s) en queue - {data.sizeleft} restants</p>
+          </div>
+          <div className="flex gap-2">
+            {data.paused
+              ? <button onClick={resume} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-sm font-semibold"><Play size={14} /> Reprendre</button>
+              : <button onClick={pause}  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10  text-amber-400  hover:bg-amber-500/20  text-sm font-semibold"><Pause size={14} /> Pause</button>
+            }
+            <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 text-sm font-semibold"><Download size={14} /> Ajouter NZB</button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {order.map(id => <TileWrapper key={id} id={id}>{tiles[id]}</TileWrapper>)}
+        </div>
+
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 text-slate-500 text-xs"><Download size={13} /><span className="uppercase tracking-widest">Queue</span></div>
+            <button onClick={() => onNavigate('queue')} className="flex items-center gap-1 text-xs text-[var(--accent)] hover:underline">
+              Tout voir <ChevronRight size={12} />
             </button>
           </div>
-          <p className="text-slate-400 mt-1 text-sm">{data.noofslots} job(s) en queue - {data.sizeleft} restants</p>
+          {jobs.length === 0 ? (
+            <div className="text-slate-600 text-sm py-4 text-center">Queue vide</div>
+          ) : (
+            <div className="space-y-3">
+              {jobs.slice(0, 8).map((job, idx) => {
+                const pct = parseFloat(job.percentage) || 0
+                const isFirst = idx === 0
+                return (
+                  <div key={job.nzo_id} className="flex items-center gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="text-sm text-slate-200 truncate">{job.filename}</div>
+                        <div className="flex items-center gap-3 text-xs text-slate-500 shrink-0">
+                          {isFirst && job.status === 'Downloading' && <span style={{ color: 'var(--accent)' }}>{(parseFloat(data.kbpersec) / 1024).toFixed(1)} MB/s</span>}
+                          <span>{job.sizeleft} / {job.size}</span>
+                          <span>{job.timeleft}</span>
+                        </div>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: job.status === 'Paused' ? '#64748b' : 'var(--accent)' }} />
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              {jobs.length > 8 && <div className="text-xs text-slate-600 text-center pt-1">{jobs.length - 8} job(s) de plus</div>}
+            </div>
+          )}
         </div>
-        <div className="flex gap-2">
-          {data.paused
-            ? <button onClick={resume} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-sm font-semibold"><Play size={14} /> Reprendre</button>
-            : <button onClick={pause}  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10  text-amber-400  hover:bg-amber-500/20  text-sm font-semibold"><Pause size={14} /> Pause</button>
-          }
-          <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 text-sm font-semibold"><Download size={14} /> Ajouter NZB</button>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {order.map(id => <TileWrapper key={id} id={id}>{tiles[id]}</TileWrapper>)}
+        {showAdd && <AddNzbModal onClose={() => setShowAdd(false)} />}
       </div>
-
-      <NzbDropzone />
-      {showAdd && <AddNzbModal onClose={() => setShowAdd(false)} />}
-    </div>
+    </PageDropZone>
   )
 }

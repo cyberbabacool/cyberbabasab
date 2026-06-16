@@ -21,16 +21,20 @@ A modern, full-featured web interface for SABnzbd, built with React + TypeScript
 ## Features
 
 - Secure login with first-launch setup (username + password, bcrypt hashed, JWT cookie)
-- Real-time dashboard with analog speed gauge and live queue
+- Real-time dashboard: analog speed gauge with 10-minute history chart, draggable/reorderable tiles (layout persisted), fullscreen monitoring mode, full-width queue overview with live speed/size/ETA per job
+- Connection status indicator showing whether the backend can reach SABnzbd
+- Real-time updates via Socket.IO with automatic polling fallback
+- Drop NZB files anywhere on the dashboard page, or browse and upload a .nzb file directly from your device
 - Full queue management: pause, resume, timed pause (15/30/60/120/240 min), rename, reorder, search, sort (name/size/progress/priority/category), delete, bulk priority, view files
-- Complete history with search, retry, retry-all-failed, and expandable post-processing logs
+- Complete history with search, retry, retry-all-failed, expandable post-processing logs, and switchable list/grid views
+- Color-coded categories across the queue and history for quick visual scanning
 - Statistics page: daily/weekly/monthly/total download totals, 24h hourly chart, per-server connection stats
 - Full RSS management: add/edit/delete feeds, ordered filters (accept/reject/must-contain/category-required/series), read feed now, enable/disable
 - Usenet server management (add, edit, delete, test connection)
 - Category management (add, edit, delete)
 - Schedule / planning
 - All SABnzbd settings configurable from the UI
-- NZB upload by drag & drop, URL, or local path
+- NZB upload by drag & drop, file browser, or URL
 - Multi-language: French, English, Spanish, Italian, German
 - Dark / Light theme
 - 5 accent colors (cyan, violet, green, orange, rose)
@@ -242,17 +246,23 @@ cyberbabasab/
       components/
         Toggle.tsx          - Reusable toggle switch
         ConfirmDialog.tsx   - Confirmation modal for destructive actions
+        ConnectionStatus.tsx - Backend-to-SABnzbd connection indicator
+        SpeedHistory.tsx    - 10-minute speed history hook and sparkline chart
+        PageDropZone.tsx    - Page-wide NZB drag-and-drop overlay
+        useCategoryColors.tsx - Consistent color assignment per category
       hooks/
         useSab.ts           - SABnzbd data hooks (queue, history, config, status, stats)
+        useSocket.ts        - Socket.IO client for real-time queue updates
+        useDashboardLayout.ts - Draggable tile order, persisted in localStorage
         usePrefs.ts         - User preferences (theme, lang, title, favicon)
         useAuth.ts          - Auth state, API calls, session expiry handling
         useToast.tsx        - Toast notification system
       pages/
         LoginPage.tsx
         SetupPage.tsx
-        DashboardPage.tsx
+        DashboardPage.tsx   - Speed gauge+history, draggable tiles, fullscreen, full-width queue
         QueuePage.tsx       - Search, sort, timed pause, bulk priority, confirmations
-        HistoryPage.tsx     - Search, retry, retry-all, expandable logs, confirmations
+        HistoryPage.tsx     - Search, retry, retry-all, expandable logs, list/grid views
         StatsPage.tsx       - Download totals and per-server stats
         ServersPage.tsx
         CategoriesPage.tsx
@@ -261,7 +271,6 @@ cyberbabasab/
         SettingsPage.tsx
         PreferencesPage.tsx - Theme, lang, branding, password change
       widgets/
-        SpeedWidget.tsx
         StatsWidget.tsx
     public/
       logo.png              - Replace with your logo (used as favicon)
