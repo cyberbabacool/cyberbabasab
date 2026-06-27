@@ -199,8 +199,8 @@ export function PreferencesPage() {
         <div className="flex items-center justify-between">
           <div className="text-sm text-slate-300">{t.pref_compact}</div>
           <button onClick={() => update({ compact: !prefs.compact })}
-            className={`w-10 h-5 rounded-full relative transition-colors ${prefs.compact ? 'bg-[var(--accent)]' : 'bg-slate-700'}`}>
-            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${prefs.compact ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            style={{ display:'flex', alignItems:'center', width:'44px', height:'24px', borderRadius:'12px', padding:'2px', border:'none', cursor:'pointer', backgroundColor: prefs.compact ? 'var(--accent)' : '#475569', transition:'background-color 200ms', boxSizing:'border-box', flexShrink:0, outline:'none' }}>
+            <span style={{ display:'block', width:'20px', height:'20px', borderRadius:'50%', backgroundColor:'white', boxShadow:'0 1px 3px rgba(0,0,0,0.4)', transition:'transform 200ms ease-in-out', flexShrink:0, transform: prefs.compact ? 'translateX(20px)' : 'translateX(0px)' }} />
           </button>
         </div>
 
@@ -235,8 +235,8 @@ export function PreferencesPage() {
           <div key={item.key} className="flex items-center justify-between">
             <div className="text-sm text-slate-300">{item.label}</div>
             <button onClick={() => update({ [item.key]: !prefs[item.key] })}
-              className={`w-10 h-5 rounded-full relative transition-colors ${prefs[item.key] ? 'bg-[var(--accent)]' : 'bg-slate-700'}`}>
-              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${prefs[item.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              style={{ display:'flex', alignItems:'center', width:'44px', height:'24px', borderRadius:'12px', padding:'2px', border:'none', cursor:'pointer', backgroundColor: prefs[item.key] ? 'var(--accent)' : '#475569', transition:'background-color 200ms', boxSizing:'border-box', flexShrink:0, outline:'none' }}>
+              <span style={{ display:'block', width:'20px', height:'20px', borderRadius:'50%', backgroundColor:'white', boxShadow:'0 1px 3px rgba(0,0,0,0.4)', transition:'transform 200ms ease-in-out', flexShrink:0, transform: prefs[item.key] ? 'translateX(20px)' : 'translateX(0px)' }} />
             </button>
           </div>
         ))}
