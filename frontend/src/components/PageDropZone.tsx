@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, type ReactNode } from 'react'
 import { UploadCloud } from 'lucide-react'
 import axios from 'axios'
 import { useToast } from '../hooks/useToast'
+import { usePrefs } from '../hooks/usePrefs'
 
 interface Props {
   children: ReactNode
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function PageDropZone({ children, onUploaded }: Props) {
+  const { t } = usePrefs()
   const [isDragging, setIsDragging] = useState(false)
   const [uploading, setUploading] = useState(false)
   const dragCounter = useRef(0)
@@ -39,7 +41,7 @@ export function PageDropZone({ children, onUploaded }: Props) {
     setIsDragging(false)
     const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.nzb'))
     if (files.length === 0) {
-      toast('Seuls les fichiers .nzb sont acceptes', 'warning')
+      toast(t.drop_only_nzb, 'warning')
       return
     }
     setUploading(true)
@@ -51,15 +53,15 @@ export function PageDropZone({ children, onUploaded }: Props) {
         await axios.post('/api/addnzb', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
         success++
       } catch {
-        toast(`Erreur lors de l'ajout de ${file.name}`, 'error')
+        toast(`${t.drop_error_prefix} ${file.name}`, 'error')
       }
     }
     if (success > 0) {
-      toast(`${success} fichier(s) ajoute(s) a la queue`, 'success')
+      toast(`${success} ${t.drop_success_suffix}`, 'success')
       onUploaded?.()
     }
     setUploading(false)
-  }, [toast, onUploaded])
+  }, [toast, onUploaded, t])
 
   return (
     <div
@@ -74,13 +76,13 @@ export function PageDropZone({ children, onUploaded }: Props) {
         <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center pointer-events-none">
           <div className="border-2 border-dashed rounded-3xl px-16 py-12 flex flex-col items-center gap-4" style={{ borderColor: 'var(--accent)' }}>
             <UploadCloud size={48} style={{ color: 'var(--accent)' }} />
-            <div className="text-xl font-bold text-white">Deposez vos fichiers .nzb ici</div>
+            <div className="text-xl font-bold text-white">{t.drop_here}</div>
           </div>
         </div>
       )}
       {uploading && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-300">
-          Envoi en cours...
+          {t.drop_uploading}
         </div>
       )}
     </div>

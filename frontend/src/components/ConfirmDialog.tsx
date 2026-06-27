@@ -1,4 +1,5 @@
 import { AlertTriangle, X } from 'lucide-react'
+import { usePrefs } from '../hooks/usePrefs'
 
 interface ConfirmDialogProps {
   title: string
@@ -11,9 +12,13 @@ interface ConfirmDialogProps {
 }
 
 export function ConfirmDialog({
-  title, message, confirmLabel = 'Confirmer', cancelLabel = 'Annuler',
+  title, message, confirmLabel, cancelLabel,
   danger = true, onConfirm, onCancel
 }: ConfirmDialogProps) {
+  const { t } = usePrefs()
+  const confirm = confirmLabel ?? t.common_confirm
+  const cancel  = cancelLabel  ?? t.common_cancel
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={onCancel}>
       <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full space-y-4" onClick={e => e.stopPropagation()}>
@@ -30,11 +35,11 @@ export function ConfirmDialog({
         <div className="flex gap-2 justify-end">
           <button onClick={onCancel}
             className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-sm font-semibold">
-            {cancelLabel}
+            {cancel}
           </button>
           <button onClick={onConfirm}
             className={`px-4 py-2 rounded-xl text-sm font-semibold ${ danger ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20' }`}>
-            {confirmLabel}
+            {confirm}
           </button>
         </div>
       </div>

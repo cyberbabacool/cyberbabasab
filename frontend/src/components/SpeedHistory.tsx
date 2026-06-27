@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { usePrefs } from '../hooks/usePrefs'
 
 interface SpeedPoint {
   t: number
@@ -33,11 +34,12 @@ export function useSpeedHistory(kbpersec: string) {
 }
 
 export function SpeedSparkline({ points }: { points: SpeedPoint[] }) {
+  const { t } = usePrefs()
   const W = 280, H = 60, PAD = 4
   if (points.length < 2) {
     return (
       <div className="flex items-center justify-center h-14 text-xs text-slate-600">
-        Collecte des donnees...
+        {t.speedhist_collecting}
       </div>
     )
   }
@@ -71,9 +73,9 @@ export function SpeedSparkline({ points }: { points: SpeedPoint[] }) {
         <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
       </svg>
       <div className="flex justify-between text-xs text-slate-600">
-        <span>-10 min</span>
-        <span>max {maxMbps} MB/s</span>
-        <span>maintenant</span>
+        <span>{t.speedhist_ago}</span>
+        <span>{t.speedhist_max} {maxMbps} MB/s</span>
+        <span>{t.speedhist_now}</span>
       </div>
     </div>
   )

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CheckCircle, XCircle, Clock, Trash2, RefreshCw, Search, RotateCcw, ChevronDown, ChevronUp, LayoutGrid, List } from 'lucide-react'
 import { CatBadge } from '../components/useCategoryColors'
 import { useHistory } from '../hooks/useSab'
+import { usePrefs } from '../hooks/usePrefs'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { useToast } from '../hooks/useToast'
 
@@ -12,6 +13,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function HistoryPage() {
   const { data, error, loading, refresh, deleteItem, retryItem, retryAll } = useHistory(200)
+  const { t } = usePrefs()
   const { toast } = useToast()
   const [search, setSearch] = useState('')
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -27,9 +29,9 @@ export function HistoryPage() {
     setDeleting(id)
     try {
       await deleteItem(id)
-      toast('Entree supprimee', 'success')
+      toast(t.hist_toast_deleted, 'success')
     } catch {
-      toast('Erreur lors de la suppression', 'error')
+      toast(t.hist_toast_delete_error, 'error')
     }
     setDeleting(null)
     setConfirmDeleteId(null)
@@ -39,9 +41,9 @@ export function HistoryPage() {
     setRetryingAll(true)
     try {
       await retryAll()
-      toast('Tous les echecs ont ete relances', 'success')
+      toast(t.hist_toast_retry_all_ok, 'success')
     } catch {
-      toast('Erreur lors du retry', 'error')
+      toast(t.hist_toast_retry_all_error, 'error')
     }
     setRetryingAll(false)
   }
@@ -50,23 +52,26 @@ export function HistoryPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-4xl font-black">Historique</h1>
-          <p className="text-slate-400 mt-1 text-sm">{data.length} entrees{failedCount > 0 && <span className="text-red-400 ml-2">({failedCount} echec(s))</span>}</p>
+          <h1 className="text-4xl font-black">{t.hist_title}</h1>
+          <p className="text-slate-400 mt-1 text-sm">
+            {data.length} {t.hist_entries}
+            {failedCount > 0 && <span className="text-red-400 ml-2">({failedCount} {t.hist_failed_count_suffix})</span>}
+          </p>
         </div>
         <div className="flex gap-2">
           {failedCount > 0 && (
             <button onClick={handleRetryAll} disabled={retryingAll}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-sm font-semibold disabled:opacity-50">
               <RotateCcw size={14} className={retryingAll ? 'animate-spin' : ''} />
-              Relancer tous les echecs
+              {t.hist_retry_all}
             </button>
           )}
           <div className="flex rounded-xl bg-slate-800 overflow-hidden">
-            <button onClick={() => setViewMode('list')} title="Vue liste"
+            <button onClick={() => setViewMode('list')} title={t.hist_view_list}
               className={`p-2 ${ viewMode === 'list' ? 'text-white bg-slate-700' : 'text-slate-500 hover:text-white' }`}>
               <List size={16} />
             </button>
-            <button onClick={() => setViewMode('grid')} title="Vue grille"
+            <button onClick={() => setViewMode('grid')} title={t.hist_view_grid}
               className={`p-2 ${ viewMode === 'grid' ? 'text-white bg-slate-700' : 'text-slate-500 hover:text-white' }`}>
               <LayoutGrid size={16} />
             </button>
@@ -79,20 +84,20 @@ export function HistoryPage() {
 
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..."
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t.hist_search}
           className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500" />
       </div>
 
       {error && <div className="text-red-400">{error}</div>}
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-8 text-center text-slate-500">Aucun resultat</div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-8 text-center text-slate-500">{t.hist_no_result}</div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {filtered.map(slot => {
             const ok = slot.status === 'Completed'
             const failed = slot.status === 'Failed'
-            const date = new Date(slot.completed * 1000).toLocaleDateString('fr-FR')
+            const date = new Date(slot.completed * 1000).toLocaleDateString()
             const isDeleting = deleting === slot.nzo_id
             return (
               <div key={slot.nzo_id} className={`rounded-2xl border border-slate-800 bg-slate-900/70 p-4 flex flex-col gap-3 transition-opacity ${isDeleting ? 'opacity-40' : ''}`}>
@@ -103,14 +108,16 @@ export function HistoryPage() {
                 <div className="flex flex-wrap gap-1.5">
                   <CatBadge cat={slot.cat} />
                   <span className="text-xs text-slate-500 px-2 py-0.5 bg-slate-800 rounded-full">{slot.size}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${ok ? 'text-emerald-400 bg-emerald-500/10' : failed ? 'text-red-400 bg-red-500/10' : 'text-slate-400 bg-slate-800'}`}>{slot.status}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${ok ? 'text-emerald-400 bg-emerald-500/10' : failed ? 'text-red-400 bg-red-500/10' : 'text-slate-400 bg-slate-800'}`}>
+                    {ok ? t.hist_completed : failed ? t.hist_failed : slot.status}
+                  </span>
                 </div>
                 {slot.fail_message && <div className="text-xs text-red-400 truncate">{slot.fail_message}</div>}
                 <div className="flex items-center justify-between mt-auto">
                   <span className="text-xs text-slate-600">{date}</span>
                   <div className="flex gap-1">
                     {failed && (
-                      <button onClick={() => { retryItem(slot.nzo_id); toast('Job relance', 'success') }}
+                      <button onClick={() => { retryItem(slot.nzo_id); toast(t.hist_toast_job_retried, 'success') }}
                         className="p-1.5 rounded-lg text-slate-600 hover:text-amber-400 hover:bg-slate-800"><RotateCcw size={13} /></button>
                     )}
                     <button onClick={() => setConfirmDeleteId(slot.nzo_id)} disabled={isDeleting}
@@ -127,7 +134,7 @@ export function HistoryPage() {
             {filtered.map(slot => {
               const ok = slot.status === 'Completed'
               const failed = slot.status === 'Failed'
-              const date = new Date(slot.completed * 1000).toLocaleString('fr-FR')
+              const date = new Date(slot.completed * 1000).toLocaleString()
               const color = STATUS_COLORS[slot.status] ?? 'text-slate-400'
               const isDeleting = deleting === slot.nzo_id
               const isExpanded = expanded === slot.nzo_id
@@ -139,7 +146,7 @@ export function HistoryPage() {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">{slot.name}</div>
                       <div className="flex flex-wrap gap-2 text-xs text-slate-500 mt-1">
-                        <span className={color}>{slot.status}</span>
+                        <span className={color}>{ok ? t.hist_completed : failed ? t.hist_failed : slot.status}</span>
                         <CatBadge cat={slot.cat} />
                         <span>{slot.size}</span>
                         {slot.fail_message && <span className="text-red-400 truncate max-w-xs">{slot.fail_message}</span>}
@@ -154,7 +161,7 @@ export function HistoryPage() {
                         </button>
                       )}
                       {failed && (
-                        <button onClick={() => { retryItem(slot.nzo_id); toast('Job relance', 'success') }} title="Relancer"
+                        <button onClick={() => { retryItem(slot.nzo_id); toast(t.hist_toast_job_retried, 'success') }} title={t.hist_retry}
                           className="p-1.5 rounded-lg text-slate-600 hover:text-amber-400 hover:bg-slate-800"><RotateCcw size={14} /></button>
                       )}
                       <button onClick={() => setConfirmDeleteId(slot.nzo_id)} disabled={isDeleting}
@@ -186,9 +193,9 @@ export function HistoryPage() {
 
       {confirmDeleteId && (
         <ConfirmDialog
-          title="Supprimer l'entree"
-          message="Cette entree sera definitivement supprimee de l'historique."
-          confirmLabel="Supprimer"
+          title={t.hist_confirm_delete_title}
+          message={t.hist_confirm_delete_msg}
+          confirmLabel={t.hist_delete}
           onConfirm={() => handleDelete(confirmDeleteId)}
           onCancel={() => setConfirmDeleteId(null)}
         />

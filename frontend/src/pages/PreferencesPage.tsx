@@ -40,9 +40,9 @@ export function PreferencesPage() {
   const handleChangePassword = async () => {
     setPwError('')
     setPwOk(false)
-    if (!curPw) { setPwError('Mot de passe actuel requis'); return }
-    if (newPw.length < 8) { setPwError('Nouveau mot de passe : 8 caracteres minimum'); return }
-    if (newPw !== confirmPw) { setPwError('Les mots de passe ne correspondent pas'); return }
+    if (!curPw) { setPwError(t.pref_pw_err_current); return }
+    if (newPw.length < 8) { setPwError(t.pref_pw_err_length); return }
+    if (newPw !== confirmPw) { setPwError(t.pref_pw_err_match); return }
     const err = await changePassword(curPw, newPw)
     if (err) { setPwError(err); return }
     setPwOk(true)
@@ -199,8 +199,8 @@ export function PreferencesPage() {
         <div className="flex items-center justify-between">
           <div className="text-sm text-slate-300">{t.pref_compact}</div>
           <button onClick={() => update({ compact: !prefs.compact })}
-            style={{ display:'flex', alignItems:'center', width:'44px', height:'24px', borderRadius:'12px', padding:'2px', border:'none', cursor:'pointer', backgroundColor: prefs.compact ? 'var(--accent)' : '#475569', transition:'background-color 200ms', boxSizing:'border-box', flexShrink:0, outline:'none' }}>
-            <span style={{ display:'block', width:'20px', height:'20px', borderRadius:'50%', backgroundColor:'white', boxShadow:'0 1px 3px rgba(0,0,0,0.4)', transition:'transform 200ms ease-in-out', flexShrink:0, transform: prefs.compact ? 'translateX(20px)' : 'translateX(0px)' }} />
+            className={`w-10 h-5 rounded-full relative transition-colors ${prefs.compact ? 'bg-[var(--accent)]' : 'bg-slate-700'}`}>
+            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${prefs.compact ? 'translate-x-5' : 'translate-x-0.5'}`} />
           </button>
         </div>
 
@@ -225,7 +225,7 @@ export function PreferencesPage() {
         {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
           <button onClick={requestNotifPermission}
             className="w-full py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:border-[var(--accent)] hover:text-[var(--accent)] text-sm transition-colors">
-            Autoriser les notifications navigateur
+            {t.pref_notif_allow}
           </button>
         )}
         {[
@@ -235,8 +235,8 @@ export function PreferencesPage() {
           <div key={item.key} className="flex items-center justify-between">
             <div className="text-sm text-slate-300">{item.label}</div>
             <button onClick={() => update({ [item.key]: !prefs[item.key] })}
-              style={{ display:'flex', alignItems:'center', width:'44px', height:'24px', borderRadius:'12px', padding:'2px', border:'none', cursor:'pointer', backgroundColor: prefs[item.key] ? 'var(--accent)' : '#475569', transition:'background-color 200ms', boxSizing:'border-box', flexShrink:0, outline:'none' }}>
-              <span style={{ display:'block', width:'20px', height:'20px', borderRadius:'50%', backgroundColor:'white', boxShadow:'0 1px 3px rgba(0,0,0,0.4)', transition:'transform 200ms ease-in-out', flexShrink:0, transform: prefs[item.key] ? 'translateX(20px)' : 'translateX(0px)' }} />
+              className={`w-10 h-5 rounded-full relative transition-colors ${prefs[item.key] ? 'bg-[var(--accent)]' : 'bg-slate-700'}`}>
+              <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${prefs[item.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </button>
           </div>
         ))}
@@ -245,30 +245,30 @@ export function PreferencesPage() {
 
       {/* Mot de passe */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 space-y-4">
-        <div className="text-xs uppercase tracking-widest text-slate-500">Securite</div>
-        <div className="text-sm text-slate-400">Connecte en tant que <span className="text-white font-semibold">{username}</span></div>
+        <div className="text-xs uppercase tracking-widest text-slate-500">{t.pref_security}</div>
+        <div className="text-sm text-slate-400">{t.pref_logged_as} <span className="text-white font-semibold">{username}</span></div>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-slate-500 block mb-1">Mot de passe actuel</label>
+            <label className="text-xs text-slate-500 block mb-1">{t.pref_pw_current}</label>
             <input type="password" value={curPw} onChange={e => setCurPw(e.target.value)}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--accent)]" />
           </div>
           <div>
-            <label className="text-xs text-slate-500 block mb-1">Nouveau mot de passe (8 min)</label>
+            <label className="text-xs text-slate-500 block mb-1">{t.pref_pw_new}</label>
             <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--accent)]" />
           </div>
           <div>
-            <label className="text-xs text-slate-500 block mb-1">Confirmer le nouveau mot de passe</label>
+            <label className="text-xs text-slate-500 block mb-1">{t.pref_pw_confirm}</label>
             <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--accent)]" />
           </div>
           {pwError && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-4 py-2.5 rounded-xl">{pwError}</div>}
-          {pwOk && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-4 py-2.5 rounded-xl">Mot de passe modifie !</div>}
+          {pwOk && <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-4 py-2.5 rounded-xl">{t.pref_pw_ok}</div>}
           <button onClick={handleChangePassword}
             className="px-5 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 text-sm font-semibold transition-colors">
-            Modifier le mot de passe
+            {t.pref_pw_change_btn}
           </button>
         </div>
       </div>

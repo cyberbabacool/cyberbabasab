@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Pause, Play, HardDrive, Clock, Download, Zap, Maximize, Minimize, GripVertical, RotateCcw, ChevronRight } from 'lucide-react'
 import { useQueue } from '../hooks/useSab'
+import { usePrefs } from '../hooks/usePrefs'
 import type { Page } from '../App'
 import { AddNzbModal } from '../components/AddNzbModal'
 import { PageDropZone } from '../components/PageDropZone'
@@ -35,6 +36,7 @@ function SpeedGauge({ kbpersec, maxMbps = 150 }: { kbpersec: string; maxMbps?: n
 }
 
 function StorageBar({ used, total, label }: { used: string; total: string; label: string }) {
+  const { t } = usePrefs()
   const usedN = parseFloat(used) || 0
   const totalN = parseFloat(total) || 1
   const pct = Math.min((usedN / totalN) * 100, 100)
@@ -43,7 +45,7 @@ function StorageBar({ used, total, label }: { used: string; total: string; label
     <div className="space-y-1">
       <div className="flex justify-between text-xs text-slate-500">
         <span>{label}</span>
-        <span>{free.toFixed(1)} GB libres</span>
+        <span>{t.dash_free_space}: {free.toFixed(1)} GB</span>
       </div>
       <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
         <div className="h-full rounded-full bg-[var(--accent)] transition-all" style={{ width: `${pct}%` }} />
@@ -54,12 +56,13 @@ function StorageBar({ used, total, label }: { used: string; total: string; label
 
 export function DashboardPage({ onNavigate }: Props) {
   const { data, pause, resume, refresh } = useQueue()
+  const { t } = usePrefs()
   const [showAdd, setShowAdd] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const speedPoints = useSpeedHistory(data?.kbpersec ?? '0')
   const { order, dragId, overId, onDragStart, onDragOver, onDrop, onDragEnd, resetLayout } = useDashboardLayout()
 
-  if (!data) return <div className="text-slate-500 p-4">Chargement...</div>
+  if (!data) return <div className="text-slate-500 p-4">{t.common_loading}</div>
 
   const isActive = data.noofslots > 0
   const jobs = data.slots ?? []
@@ -87,10 +90,10 @@ export function DashboardPage({ onNavigate }: Props) {
   const tiles: Record<TileId, React.ReactNode> = {
     speed: (
       <>
-        <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Zap size={13} /><span className="uppercase tracking-widest">Vitesse</span></div>
+        <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Zap size={13} /><span className="uppercase tracking-widest">{t.dash_speed}</span></div>
         <SpeedGauge kbpersec={data.kbpersec} />
         <div className="text-center text-xs text-slate-500 mt-3 mb-3">
-          Limite: {data.speedlimit ? data.speedlimit + '%' : 'Aucune'}
+          {t.dash_limit}: {data.speedlimit ? data.speedlimit + '%' : t.common_none}
         </div>
         <div className="pt-3 border-t border-slate-800">
           <SpeedSparkline points={speedPoints} />
@@ -99,44 +102,44 @@ export function DashboardPage({ onNavigate }: Props) {
     ),
     storage: (
       <>
-        <div className="flex items-center gap-2 text-slate-500 text-xs mb-4"><HardDrive size={13} /><span className="uppercase tracking-widest">Stockage</span></div>
+        <div className="flex items-center gap-2 text-slate-500 text-xs mb-4"><HardDrive size={13} /><span className="uppercase tracking-widest">{t.dash_storage}</span></div>
         <div className="space-y-4">
-          <StorageBar used={data.diskspace1} total={data.diskspacetotal1} label="Telechargement" />
-          <StorageBar used={data.diskspace2} total={data.diskspacetotal2} label="Completions" />
-          <div className="text-xs text-slate-500">Cache: {data.cache_size}</div>
+          <StorageBar used={data.diskspace1} total={data.diskspacetotal1} label={t.dash_download_folder} />
+          <StorageBar used={data.diskspace2} total={data.diskspacetotal2} label={t.dash_complete_folder} />
+          <div className="text-xs text-slate-500">{t.dash_cache}: {data.cache_size}</div>
         </div>
       </>
     ),
     progress: isActive ? (
       <>
-        <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Clock size={13} /><span className="uppercase tracking-widest">Progression</span></div>
+        <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Clock size={13} /><span className="uppercase tracking-widest">{t.dash_global_progress}</span></div>
         <div className="space-y-3">
           <div>
             <div className="flex justify-between text-xs text-slate-400 mb-1">
-              <span>Global</span><span>{data.mbleft} MB restants</span>
+              <span>{t.dash_global}</span><span>{data.mbleft} MB {t.dash_remaining}</span>
             </div>
             <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
               <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${Math.min(100 - (parseFloat(data.mbleft) / Math.max(parseFloat(data.mb), 1)) * 100, 100)}%` }} />
             </div>
           </div>
-          <div className="text-sm font-semibold">{data.timeleft} restant</div>
+          <div className="text-sm font-semibold">{data.timeleft} {t.dash_remaining}</div>
           <div className="text-xs text-slate-500">ETA: {data.eta}</div>
         </div>
       </>
     ) : (
       <>
-        <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Clock size={13} /><span className="uppercase tracking-widest">Progression</span></div>
+        <div className="flex items-center gap-2 text-slate-500 text-xs mb-3"><Clock size={13} /><span className="uppercase tracking-widest">{t.dash_global_progress}</span></div>
         <div className="space-y-3">
           <div>
             <div className="flex justify-between text-xs text-slate-400 mb-1">
-              <span>Global</span><span>0%</span>
+              <span>{t.dash_global}</span><span>0%</span>
             </div>
             <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
               <div className="h-full rounded-full bg-slate-700" style={{ width: '0%' }} />
             </div>
           </div>
-          <div className="text-sm font-semibold text-slate-500">Inactif</div>
-          <div className="text-xs text-slate-600">Aucun telechargement en cours</div>
+          <div className="text-sm font-semibold text-slate-500">{t.dash_inactive}</div>
+          <div className="text-xs text-slate-600">{t.dash_no_downloads}</div>
         </div>
       </>
     ),
@@ -148,24 +151,24 @@ export function DashboardPage({ onNavigate }: Props) {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-4xl font-black">Dashboard</h1>
-              <button onClick={() => setFullscreen(!fullscreen)}
+              <h1 className="text-4xl font-black">{t.dash_title}</h1>
+              <button onClick={() => setFullscreen(!fullscreen)} title={t.dash_fullscreen}
                 className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800">
                 {fullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
               </button>
-              <button onClick={resetLayout} title="Reinitialiser l'agencement"
+              <button onClick={resetLayout} title={t.dash_reset_layout}
                 className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800">
                 <RotateCcw size={16} />
               </button>
             </div>
-            <p className="text-slate-400 mt-1 text-sm">{data.noofslots} job(s) en queue - {data.sizeleft} restants</p>
+            <p className="text-slate-400 mt-1 text-sm">{data.noofslots} {t.dash_jobs} - {data.sizeleft} {t.dash_remaining}</p>
           </div>
           <div className="flex gap-2">
             {data.paused
-              ? <button onClick={resume} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-sm font-semibold"><Play size={14} /> Reprendre</button>
-              : <button onClick={pause}  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10  text-amber-400  hover:bg-amber-500/20  text-sm font-semibold"><Pause size={14} /> Pause</button>
+              ? <button onClick={resume} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-sm font-semibold"><Play size={14} /> {t.dash_resume}</button>
+              : <button onClick={pause}  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10  text-amber-400  hover:bg-amber-500/20  text-sm font-semibold"><Pause size={14} /> {t.dash_pause}</button>
             }
-            <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 text-sm font-semibold"><Download size={14} /> Ajouter NZB</button>
+            <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 text-sm font-semibold"><Download size={14} /> {t.dash_add_nzb}</button>
           </div>
         </div>
 
@@ -175,13 +178,13 @@ export function DashboardPage({ onNavigate }: Props) {
 
         <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-slate-500 text-xs"><Download size={13} /><span className="uppercase tracking-widest">Queue</span></div>
+            <div className="flex items-center gap-2 text-slate-500 text-xs"><Download size={13} /><span className="uppercase tracking-widest">{t.nav_queue}</span></div>
             <button onClick={() => onNavigate('queue')} className="flex items-center gap-1 text-xs text-[var(--accent)] hover:underline">
-              Tout voir <ChevronRight size={12} />
+              {t.dash_see_all} <ChevronRight size={12} />
             </button>
           </div>
           {jobs.length === 0 ? (
-            <div className="text-slate-600 text-sm py-4 text-center">Queue vide</div>
+            <div className="text-slate-600 text-sm py-4 text-center">{t.queue_empty}</div>
           ) : (
             <div className="space-y-3">
               {jobs.slice(0, 8).map((job, idx) => {
@@ -205,7 +208,7 @@ export function DashboardPage({ onNavigate }: Props) {
                   </div>
                 )
               })}
-              {jobs.length > 8 && <div className="text-xs text-slate-600 text-center pt-1">{jobs.length - 8} job(s) de plus</div>}
+              {jobs.length > 8 && <div className="text-xs text-slate-600 text-center pt-1">{jobs.length - 8} {t.dash_more_jobs}</div>}
             </div>
           )}
         </div>
