@@ -21,7 +21,8 @@ A modern, full-featured web interface for SABnzbd, built with React + TypeScript
 ## Features
 
 - Secure login with first-launch setup (username + password, bcrypt hashed, JWT cookie)
-- Real-time dashboard: analog speed gauge with 10-minute history chart, draggable/reorderable tiles (layout persisted), fullscreen monitoring mode, full-width queue overview with live speed/size/ETA per job
+- Real-time dashboard: 5 selectable speed gauge styles (arc, donut, bar, speedometer with needle, digital), 10-minute speed history chart, draggable/reorderable tiles (layout persisted), fullscreen monitoring mode, full-width queue overview with live speed/size/ETA per job
+- Paginated download history directly on the dashboard (10/25/50 entries per page), no separate history page needed
 - Connection status indicator showing whether the backend can reach SABnzbd
 - Real-time updates via Socket.IO with automatic polling fallback
 - Drop NZB files anywhere on the dashboard page, or browse and upload a .nzb file directly from your device
@@ -248,6 +249,7 @@ cyberbabasab/
         ConfirmDialog.tsx   - Confirmation modal for destructive actions
         ConnectionStatus.tsx - Backend-to-SABnzbd connection indicator
         SpeedHistory.tsx    - 10-minute speed history hook and sparkline chart
+        SpeedGauge.tsx      - 5 gauge styles (arc, donut, bar, speedometer, digital)
         PageDropZone.tsx    - Page-wide NZB drag-and-drop overlay
         useCategoryColors.tsx - Consistent color assignment per category
       hooks/
@@ -260,9 +262,8 @@ cyberbabasab/
       pages/
         LoginPage.tsx
         SetupPage.tsx
-        DashboardPage.tsx   - Speed gauge+history, draggable tiles, fullscreen, full-width queue
+        DashboardPage.tsx   - Speed gauge, 10min chart, draggable tiles, fullscreen, queue+paginated history
         QueuePage.tsx       - Search, sort, timed pause, bulk priority, confirmations
-        HistoryPage.tsx     - Search, retry, retry-all, expandable logs, list/grid views
         StatsPage.tsx       - Download totals and per-server stats
         ServersPage.tsx
         CategoriesPage.tsx
@@ -293,6 +294,8 @@ All UI preferences are stored in browser localStorage (no server restart needed)
 - Language (fr, en, es, it, de)
 - App name (used as browser tab title)
 - Logo URL (used as favicon and sidebar logo)
+- Speed gauge style: Arc (half-circle), Donut (full circle), Bar (horizontal), Speedometer (needle with graduation marks), Digital (large number)
+- History entries per page on dashboard (10, 25 or 50)
 - Refresh interval (1s to 10s)
 - Number of jobs shown on dashboard
 - Compact mode
