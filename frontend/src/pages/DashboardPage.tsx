@@ -39,7 +39,7 @@ export function DashboardPage({ onNavigate }: Props) {
   const [fullscreen, setFullscreen] = useState(false)
   const [histPage, setHistPage] = useState(0)
   const speedPoints = useSpeedHistory(data?.kbpersec ?? '0')
-  const { order, dragId, overId, onDragStart, onDragOver, onDrop, onDragEnd, resetLayout } = useDashboardLayout()
+  const { order, dragId, onDragStart, onDragOver, onDrop, onDragEnd, resetLayout } = useDashboardLayout()
 
   const histLimit = prefs.historyLimit ?? 25
   const histTotalPages = Math.ceil(historySlots.length / histLimit)
@@ -54,13 +54,12 @@ export function DashboardPage({ onNavigate }: Props) {
   const TileWrapper = ({ id, children }: { id: TileId; children: React.ReactNode }) => (
     <div
       draggable
-      onDragStart={() => onDragStart(id)}
+      onDragStart={e => onDragStart(e, id)}
       onDragOver={e => onDragOver(e, id)}
-      onDrop={e => onDrop(e, id)}
+      onDrop={e => onDrop(e)}
       onDragEnd={onDragEnd}
       style={{
         opacity: dragId === id ? 0.4 : 1,
-        borderColor: overId === id && dragId && dragId !== id ? 'var(--accent)' : undefined,
       }}
       className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 transition-all cursor-grab active:cursor-grabbing"
     >
