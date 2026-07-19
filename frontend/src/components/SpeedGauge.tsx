@@ -51,23 +51,26 @@ function GaugeDonut({ mbps, pct, limit }: { mbps: number; pct: number; limit: st
         strokeDasharray={`${prog.toFixed(1)} ${circ.toFixed(1)}`}
         strokeDashoffset={offset}
         transform={`rotate(-90 ${cx} ${cy})`} />
-      <text x={cx} y={cx-4} textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">{fmt(mbps)}</text>
-      <text x={cx} y={cx+7} textAnchor="middle" fill="#64748b" fontSize="6">MB/s</text>
+      <text x={cx} y={cy+4} textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">{fmt(mbps)}</text>
+      <text x={cx} y={cy+14} textAnchor="middle" fill="#64748b" fontSize="7">MB/s</text>
       {limit && <text x={cx} y={95} textAnchor="middle" fill="#475569" fontSize="6">{limit}</text>}
     </svg>
   )
 }
 
-// Type 3: Barre horizontale
+// Type 3: Barre horizontale - accent sur la barre, nombre secondaire
 function GaugeBar({ mbps, pct, limit }: { mbps: number; pct: number; limit: string }) {
-  const w = 180, bh = 10
+  const w = 176, bh = 18
   return (
-    <svg viewBox="0 0 200 80" className="w-full">
-      <text x={100} y={30} textAnchor="middle" fill="white" fontSize="26" fontWeight="bold">{fmt(mbps)}</text>
-      <text x={100} y={43} textAnchor="middle" fill="#64748b" fontSize="8">MB/s</text>
-      <rect x={10} y={52} width={w} height={bh} rx={5} fill="#1e293b" />
-      <rect x={10} y={52} width={Math.max(pct*w, pct>0?6:0)} height={bh} rx={5} fill="var(--accent)" />
-      {limit && <text x={100} y={74} textAnchor="middle" fill="#475569" fontSize="7">{limit}</text>}
+    <svg viewBox="0 0 200 90" className="w-full">
+      <rect x={12} y={15} width={w} height={bh} rx={9} fill="#1e293b" />
+      <rect x={12} y={15} width={Math.max(pct*w, pct>0?18:0)} height={bh} rx={9} fill="var(--accent)" />
+      <text x={12 + Math.max(pct*w, pct>0?18:0) - 4} y={28} textAnchor="end" fill="white" fontSize="10" fontWeight="bold">{fmt(mbps)}</text>
+      <text x={100} y={52} textAnchor="middle" fill="#64748b" fontSize="9">MB/s</text>
+      <text x={12} y={48} textAnchor="start" fill="#334155" fontSize="7">0</text>
+      <text x={12+w} y={48} textAnchor="end" fill="#334155" fontSize="7">150</text>
+      {pct > 0 && <rect x={12 + pct*w - 1} y={10} width={2} height={28} rx={1} fill="white" opacity="0.6" />}
+      {limit && <text x={100} y={68} textAnchor="middle" fill="#475569" fontSize="7">{limit}</text>}
     </svg>
   )
 }
@@ -94,7 +97,7 @@ function GaugeMeter({ mbps, pct, maxMbps, limit }: { mbps: number; pct: number; 
   const ticks = [0, 0.25, 0.5, 0.75, 1.0]
   const tickLabels = [0, Math.round(maxMbps*0.25), Math.round(maxMbps*0.5), Math.round(maxMbps*0.75), maxMbps]
   return (
-    <svg viewBox="0 0 200 115" className="w-full">
+    <svg viewBox="0 0 200 130" className="w-full">
       {/* Arc fond */}
       <circle cx={cx} cy={cy} r={R} fill="none" stroke="#1e293b" strokeWidth={sw}
         strokeDasharray={`${arcLen.toFixed(1)} ${gap.toFixed(1)}`}
@@ -128,9 +131,9 @@ function GaugeMeter({ mbps, pct, maxMbps, limit }: { mbps: number; pct: number; 
         stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
       <circle cx={cx} cy={cy} r={5} fill="var(--accent)" />
       <circle cx={cx} cy={cy} r={2.5} fill="white" />
-      <text x={cx} y={cy+14} textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">{fmt(mbps)}</text>
-      <text x={cx} y={cy+25} textAnchor="middle" fill="#64748b" fontSize="7">MB/s</text>
-      {limit && <text x={cx} y={112} textAnchor="middle" fill="#475569" fontSize="7">{limit}</text>}
+      <text x={cx} y={cy+30} textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">{fmt(mbps)}</text>
+      <text x={cx} y={cy+43} textAnchor="middle" fill="#64748b" fontSize="7">MB/s</text>
+      {limit && <text x={cx} y={127} textAnchor="middle" fill="#475569" fontSize="7">{limit}</text>}
     </svg>
   )
 }
