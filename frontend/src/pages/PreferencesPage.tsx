@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 import type { AccentColor, ThemeMode, SpeedUnit } from '../hooks/usePrefs'
 import { LANG_LABELS } from '../i18n'
 import type { Lang } from '../i18n'
+import { SpeedGauge, type GaugeType } from '../components/SpeedGauge'
 
 const ACCENTS: { key: AccentColor; label: string }[] = [
   { key: 'cyan',   label: 'Cyan'   },
@@ -19,6 +20,8 @@ const REFRESH_OPTIONS = [
 ]
 
 const DASH_JOBS_OPTIONS = [3, 5, 6, 8, 10]
+
+const HISTORY_LIMIT_OPTIONS = [10, 25, 50]
 
 export function PreferencesPage() {
   const { prefs, update, reset, t } = usePrefs()
@@ -214,6 +217,30 @@ export function PreferencesPage() {
                     ? 'border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-bg)]'
                     : 'border-slate-700 text-slate-400 hover:border-slate-500'
                 }`}>{u}</button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="text-sm text-slate-300 mb-3">{t.pref_gauge_type}</div>
+          <div className="grid grid-cols-5 gap-2">
+            {([1,2,3,4,5] as GaugeType[]).map(type => (
+              <button key={type} onClick={() => update({ gaugeType: type })}
+                className={`rounded-xl border p-2 transition-colors ${ prefs.gaugeType === type ? 'border-[var(--accent)] bg-[var(--accent-bg)]' : 'border-slate-700 hover:border-slate-500' }`}>
+                <SpeedGauge kbpersec="88832" speedlimit="100" maxMbps={150} gaugeType={type} />
+                <div className={`text-xs text-center mt-1 ${ prefs.gaugeType === type ? 'text-[var(--accent)]' : 'text-slate-500' }`}>
+                  {type === 1 ? 'Arc' : type === 2 ? 'Donut' : type === 3 ? 'Barre' : type === 4 ? 'Compteur' : 'Digital'}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-slate-300">{t.pref_history_limit}</div>
+          <div className="flex gap-2">
+            {HISTORY_LIMIT_OPTIONS.map(n => (
+              <button key={n} onClick={() => update({ historyLimit: n })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${ prefs.historyLimit === n ? 'border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-bg)]' : 'border-slate-700 text-slate-400 hover:border-slate-500' }`}>{n}</button>
             ))}
           </div>
         </div>

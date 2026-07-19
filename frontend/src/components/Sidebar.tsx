@@ -1,4 +1,4 @@
-import { Activity, List, History, Server, Tag, Clock, Rss, Settings, Sliders, X, LogOut, BarChart2 } from 'lucide-react'
+import { Activity, List, Server, Tag, Clock, Rss, Settings, Sliders, X, LogOut, BarChart2 } from 'lucide-react'
 import { ConnectionStatus } from './ConnectionStatus'
 import type { Page } from '../App'
 import { usePrefs } from '../hooks/usePrefs'
@@ -13,7 +13,6 @@ export function Sidebar({ current, onNavigate, onClose }: Props) {
   const items: { label: string; icon: typeof Activity; page: Page }[] = [
     { label: t.nav_dashboard,   icon: Activity, page: 'dashboard'   },
     { label: t.nav_queue,       icon: List,     page: 'queue'       },
-    { label: t.nav_history,     icon: History,  page: 'history'     },
     { label: t.nav_servers,     icon: Server,   page: 'servers'     },
     { label: t.nav_categories,  icon: Tag,      page: 'categories'  },
     { label: t.nav_schedule,    icon: Clock,    page: 'schedule'    },

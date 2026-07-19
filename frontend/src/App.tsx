@@ -3,7 +3,6 @@ import { Menu } from 'lucide-react'
 import { Sidebar } from './components/Sidebar'
 import { DashboardPage } from './pages/DashboardPage'
 import { QueuePage } from './pages/QueuePage'
-import { HistoryPage } from './pages/HistoryPage'
 import { ServersPage } from './pages/ServersPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { SchedulePage } from './pages/SchedulePage'
@@ -17,7 +16,7 @@ import { PrefsContext, usePrefsStore } from './hooks/usePrefs'
 import { AuthContext, useAuthStore } from './hooks/useAuth'
 import { ToastProvider } from './hooks/useToast'
 
-export type Page = 'dashboard' | 'queue' | 'history' | 'servers' | 'categories' | 'schedule' | 'rss' | 'settings' | 'preferences' | 'stats'
+export type Page = 'dashboard' | 'queue' | 'servers' | 'categories' | 'schedule' | 'rss' | 'settings' | 'preferences' | 'stats'
 
 export default function App() {
   const [page, setPage] = useState<Page>('dashboard')
@@ -82,8 +81,7 @@ export default function App() {
               <main className={`flex-1 p-4 lg:p-8 overflow-auto ${prefs.theme === 'light' ? 'text-slate-900' : 'text-white'}`}>
                 {page === 'dashboard'   && <DashboardPage onNavigate={navigate} />}
                 {page === 'queue'       && <QueuePage />}
-                {page === 'history'     && <HistoryPage />}
-                {page === 'servers'     && <ServersPage />}
+                  {page === 'servers'     && <ServersPage />}
                 {page === 'categories'  && <CategoriesPage />}
                 {page === 'schedule'    && <SchedulePage />}
                 {page === 'rss'         && <RssPage />}

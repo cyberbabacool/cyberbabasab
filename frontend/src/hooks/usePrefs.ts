@@ -18,6 +18,8 @@ export interface Prefs {
   speedUnit: SpeedUnit
   notifComplete: boolean
   notifFail: boolean
+  gaugeType: number
+  historyLimit: number
 }
 
 const DEFAULT_PREFS: Prefs = {
@@ -32,6 +34,8 @@ const DEFAULT_PREFS: Prefs = {
   speedUnit: 'MB/s',
   notifComplete: false,
   notifFail: false,
+  gaugeType: 1,
+  historyLimit: 25,
 }
 
 const STORAGE_KEY = 'cyberbabasab_prefs'
