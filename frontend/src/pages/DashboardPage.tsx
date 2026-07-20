@@ -12,11 +12,41 @@ import { CatBadge } from '../components/useCategoryColors'
 
 interface Props { onNavigate: (p: Page) => void }
 
+// TileWrapper DOIT etre hors du composant parent pour eviter le remontage a chaque render
+interface TileWrapperProps {
+  id: TileId
+  dragId: TileId | null
+  children: React.ReactNode
+  onDragStart: (e: React.DragEvent, id: TileId) => void
+  onDragOver:  (e: React.DragEvent, id: TileId) => void
+  onDrop:      (e: React.DragEvent) => void
+  onDragEnd:   () => void
+}
+
+function TileWrapper({ id, dragId, children, onDragStart, onDragOver, onDrop, onDragEnd }: TileWrapperProps) {
+  return (
+    <div
+      draggable
+      onDragStart={e => onDragStart(e, id)}
+      onDragOver={e => onDragOver(e, id)}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      style={{ opacity: dragId === id ? 0.4 : 1 }}
+      className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 transition-opacity cursor-grab active:cursor-grabbing"
+    >
+      <div className="flex items-center justify-end mb-1 -mt-1">
+        <GripVertical size={14} className="text-slate-700" />
+      </div>
+      {children}
+    </div>
+  )
+}
+
 function StorageBar({ used, total, label }: { used: string; total: string; label: string }) {
   const { t } = usePrefs()
-  const usedN = parseFloat(used) || 0
+  const usedN  = parseFloat(used)  || 0
   const totalN = parseFloat(total) || 1
-  const pct = Math.min((usedN / totalN) * 100, 100)
+  const pct  = Math.min((usedN / totalN) * 100, 100)
   const free = totalN - usedN
   return (
     <div className="space-y-1">
@@ -35,7 +65,7 @@ export function DashboardPage({ onNavigate }: Props) {
   const { data, pause, resume, refresh: refreshQueue } = useQueue()
   const { t, prefs } = usePrefs()
   const { data: historySlots, loading: histLoading } = useHistory(500)
-  const [showAdd, setShowAdd] = useState(false)
+  const [showAdd, setShowAdd]   = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const [histPage, setHistPage] = useState(0)
   const speedPoints = useSpeedHistory(data?.kbpersec ?? '0')
@@ -49,26 +79,9 @@ export function DashboardPage({ onNavigate }: Props) {
   if (!data) return <div className="text-slate-500 p-4">{t.common_loading}</div>
 
   const isActive = data.noofslots > 0
-  const jobs = data.slots ?? []
+  const jobs     = data.slots ?? []
 
-  const TileWrapper = ({ id, children }: { id: TileId; children: React.ReactNode }) => (
-    <div
-      draggable
-      onDragStart={e => onDragStart(e, id)}
-      onDragOver={e => onDragOver(e, id)}
-      onDrop={e => onDrop(e)}
-      onDragEnd={onDragEnd}
-      style={{
-        opacity: dragId === id ? 0.4 : 1,
-      }}
-      className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 transition-all cursor-grab active:cursor-grabbing"
-    >
-      <div className="flex items-center justify-end mb-1 -mt-1">
-        <GripVertical size={14} className="text-slate-700" />
-      </div>
-      {children}
-    </div>
-  )
+  const tileProps = { dragId, onDragStart, onDragOver, onDrop, onDragEnd }
 
   const tiles: Record<TileId, React.ReactNode> = {
     speed: (
@@ -76,12 +89,7 @@ export function DashboardPage({ onNavigate }: Props) {
         <div className="flex items-center gap-2 text-slate-500 text-xs mb-2">
           <span className="uppercase tracking-widest">{t.dash_speed}</span>
         </div>
-        <SpeedGauge
-          kbpersec={data.kbpersec}
-          speedlimit={data.speedlimit}
-          maxMbps={150}
-          gaugeType={(prefs.gaugeType ?? 1) as any}
-        />
+        <SpeedGauge kbpersec={data.kbpersec} speedlimit={data.speedlimit} maxMbps={150} gaugeType={(prefs.gaugeType ?? 1) as any} />
         <div className="pt-3 border-t border-slate-800 mt-2">
           <SpeedSparkline points={speedPoints} />
         </div>
@@ -131,7 +139,7 @@ export function DashboardPage({ onNavigate }: Props) {
   return (
     <PageDropZone onUploaded={refreshQueue}>
       <div className={fullscreen ? 'fixed inset-0 z-40 bg-slate-950 overflow-auto p-6' : 'space-y-6'}>
-        {/* Header */}
+
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="flex items-center gap-3">
@@ -156,12 +164,12 @@ export function DashboardPage({ onNavigate }: Props) {
           </div>
         </div>
 
-        {/* Tuiles draggables */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {order.map(id => <TileWrapper key={id} id={id}>{tiles[id]}</TileWrapper>)}
+          {order.map(id => (
+            <TileWrapper key={id} id={id} {...tileProps}>{tiles[id]}</TileWrapper>
+          ))}
         </div>
 
-        {/* Queue pleine largeur */}
         <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2 text-slate-500 text-xs"><Download size={13} /><span className="uppercase tracking-widest">{t.nav_queue}</span></div>
@@ -199,7 +207,6 @@ export function DashboardPage({ onNavigate }: Props) {
           )}
         </div>
 
-        {/* Historique pagine */}
         <div className="rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800">
             <div className="flex items-center gap-2 text-slate-500 text-xs">
@@ -229,10 +236,7 @@ export function DashboardPage({ onNavigate }: Props) {
                 const date = new Date(slot.completed * 1000).toLocaleString()
                 return (
                   <div key={slot.nzo_id} className="px-5 py-3 flex items-center gap-3">
-                    {ok
-                      ? <CheckCircle size={14} className="text-emerald-400 shrink-0" />
-                      : <XCircle size={14} className="text-red-400 shrink-0" />
-                    }
+                    {ok ? <CheckCircle size={14} className="text-emerald-400 shrink-0" /> : <XCircle size={14} className="text-red-400 shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-slate-200 truncate">{slot.name}</div>
                       <div className="flex gap-2 mt-0.5">
