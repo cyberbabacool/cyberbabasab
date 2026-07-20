@@ -75,65 +75,70 @@ function GaugeBar({ mbps, pct, limit }: { mbps: number; pct: number; limit: stri
   )
 }
 
-// Type 4: Compteur avec aiguille (style speedometer classique)
-// Arc de 210deg a 330deg (240deg de plage), sens horaire
+// Type 4: Compteur avec aiguille et graduations detaillees
 function GaugeMeter({ mbps, pct, maxMbps, limit }: { mbps: number; pct: number; maxMbps: number; limit: string }) {
-  const R = 58, cx = 100, cy = 90, sw = 8, Rn = 50
+  const R = 52, cx = 100, cy = 80, sw = 7, Rn = 44
   const circ = 2 * Math.PI * R
   const arcDeg = 240
-  const arcLen = (arcDeg / 360) * circ  // longueur arc 240deg
+  const startDeg = 150
+  const arcLen = (arcDeg / 360) * circ
   const gap = circ - arcLen
   const prog = pct * arcLen
-  // Rotation pour placer l'arc: debut a 150deg (bas gauche), fin a 30deg (bas droite)
-  // stroke-dashoffset=0 commence a 3h, on veut commencer a 5h (150deg)
-  const startDeg = 150
   const dashOffset = -(startDeg / 360) * circ
   // Aiguille
-  const needleDeg = startDeg + pct * arcDeg
-  const needleRad = (needleDeg * Math.PI) / 180
+  const needleRad = ((startDeg + pct * arcDeg) * Math.PI) / 180
   const nx = cx + Rn * Math.cos(needleRad)
   const ny = cy + Rn * Math.sin(needleRad)
-  // Graduations: 5 ticks a 0%, 25%, 50%, 75%, 100%
-  const ticks = [0, 0.25, 0.5, 0.75, 1.0]
-  const tickLabels = [0, Math.round(maxMbps*0.25), Math.round(maxMbps*0.5), Math.round(maxMbps*0.75), maxMbps]
+  // 9 graduations (0,25,50,75,100% + intermedaires)
+  const majTicks = [0, 0.25, 0.5, 0.75, 1.0]
+  const minTicks = [0.125, 0.375, 0.625, 0.875]
   return (
-    <svg viewBox="0 0 200 130" className="w-full">
+    <svg viewBox="0 0 200 125" className="w-full">
       {/* Arc fond */}
       <circle cx={cx} cy={cy} r={R} fill="none" stroke="#1e293b" strokeWidth={sw}
         strokeDasharray={`${arcLen.toFixed(1)} ${gap.toFixed(1)}`}
         strokeDashoffset={dashOffset.toFixed(1)} />
       {/* Arc progression */}
-      {pct > 0 && (
+      {pct > 0.005 && (
         <circle cx={cx} cy={cy} r={R} fill="none" stroke="var(--accent)" strokeWidth={sw}
           strokeLinecap="round"
-          strokeDasharray={`${prog.toFixed(1)} ${(circ-prog).toFixed(1)}`}
+          strokeDasharray={`${prog.toFixed(1)} ${(circ - prog).toFixed(1)}`}
           strokeDashoffset={dashOffset.toFixed(1)} />
       )}
-      {/* Ticks */}
-      {ticks.map((t, i) => {
-        const deg = startDeg + t * arcDeg
-        const rad = (deg * Math.PI) / 180
-        const Ri = R + sw/2 + 3, Ro = R + sw/2 + 9
-        return <line key={i} x1={cx+Ri*Math.cos(rad)} y1={cy+Ri*Math.sin(rad)}
-          x2={cx+Ro*Math.cos(rad)} y2={cy+Ro*Math.sin(rad)}
-          stroke="#334155" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Ticks mineurs */}
+      {minTicks.map((t, i) => {
+        const rad = ((startDeg + t * arcDeg) * Math.PI) / 180
+        const Ri = R + sw / 2 + 2, Ro = R + sw / 2 + 6
+        return <line key={i}
+          x1={cx + Ri * Math.cos(rad)} y1={cy + Ri * Math.sin(rad)}
+          x2={cx + Ro * Math.cos(rad)} y2={cy + Ro * Math.sin(rad)}
+          stroke="#334155" strokeWidth="1" strokeLinecap="round" />
       })}
-      {/* Labels de tick */}
-      {ticks.map((t, i) => {
-        const deg = startDeg + t * arcDeg
-        const rad = (deg * Math.PI) / 180
-        const Rl = R + sw/2 + 18
-        return <text key={i} x={cx+Rl*Math.cos(rad)} y={cy+Rl*Math.sin(rad)+3}
-          textAnchor="middle" fill="#475569" fontSize="7">{tickLabels[i]}</text>
+      {/* Ticks majeurs + labels */}
+      {majTicks.map((t, i) => {
+        const rad = ((startDeg + t * arcDeg) * Math.PI) / 180
+        const Ri = R + sw / 2 + 2, Ro = R + sw / 2 + 10
+        const Rl = R + sw / 2 + 19
+        const label = i === 0 ? 0 : i === 4 ? maxMbps : Math.round(maxMbps * t)
+        return (
+          <g key={i}>
+            <line x1={cx + Ri * Math.cos(rad)} y1={cy + Ri * Math.sin(rad)}
+              x2={cx + Ro * Math.cos(rad)} y2={cy + Ro * Math.sin(rad)}
+              stroke="#475569" strokeWidth="1.5" strokeLinecap="round" />
+            <text x={cx + Rl * Math.cos(rad)} y={cy + Rl * Math.sin(rad) + 3}
+              textAnchor="middle" fill="#475569" fontSize="7">{label}</text>
+          </g>
+        )
       })}
       {/* Aiguille */}
       <line x1={cx} y1={cy} x2={nx.toFixed(1)} y2={ny.toFixed(1)}
         stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
       <circle cx={cx} cy={cy} r={5} fill="var(--accent)" />
       <circle cx={cx} cy={cy} r={2.5} fill="white" />
-      <text x={cx} y={cy+30} textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">{fmt(mbps)}</text>
-      <text x={cx} y={cy+43} textAnchor="middle" fill="#64748b" fontSize="7">MB/s</text>
-      {limit && <text x={cx} y={127} textAnchor="middle" fill="#475569" fontSize="7">{limit}</text>}
+      {/* Valeur numerique - bien en dessous du pivot */}
+      <text x={cx} y={cy + 23} textAnchor="middle" fill="white" fontSize="17" fontWeight="bold">{fmt(mbps)}</text>
+      <text x={cx} y={cy + 33} textAnchor="middle" fill="#64748b" fontSize="8">MB/s</text>
+      {limit && <text x={cx} y={122} textAnchor="middle" fill="#475569" fontSize="7">{limit}</text>}
     </svg>
   )
 }
