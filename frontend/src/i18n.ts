@@ -590,6 +590,7 @@ export interface Translations {
   dash_history_page: string
   dash_history_empty: string
   pref_history_limit: string
+  pref_max_speed: string
 }
 
 
@@ -728,6 +729,7 @@ const fr: Translations = {
   common_default: 'Defaut',
   common_none: 'Aucun',
   common_apply: 'Appliquer',
+  pref_max_speed: 'Vitesse max (jauge compteur)',
   pref_history_limit: 'Entrees par page (historique)',
   pref_gauge_type: 'Type de jauge',
   pref_gauge_arc: 'Arc',
@@ -1321,6 +1323,7 @@ const en: Translations = {
   common_default: 'Default',
   common_none: 'None',
   common_apply: 'Apply',
+  pref_max_speed: 'Max speed (gauge)',
   pref_history_limit: 'Entries per page (history)',
   pref_gauge_type: 'Gauge type',
   pref_gauge_arc: 'Arc',
@@ -1914,6 +1917,7 @@ const es: Translations = {
   common_default: 'Por defecto',
   common_none: 'Ninguno',
   common_apply: 'Aplicar',
+  pref_max_speed: 'Velocidad max (indicador)',
   pref_history_limit: 'Entradas por pagina (historial)',
   pref_gauge_type: 'Tipo de indicador',
   pref_gauge_arc: 'Arco',
@@ -2507,6 +2511,7 @@ const it: Translations = {
   common_default: 'Predefinito',
   common_none: 'Nessuno',
   common_apply: 'Applica',
+  pref_max_speed: 'Velocita max (indicatore)',
   pref_history_limit: 'Voci per pagina (cronologia)',
   pref_gauge_type: 'Tipo di indicatore',
   pref_gauge_arc: 'Arco',
@@ -3100,6 +3105,7 @@ const de: Translations = {
   common_default: 'Standard',
   common_none: 'Keine',
   common_apply: 'Anwenden',
+  pref_max_speed: 'Max. Geschwindigkeit (Anzeige)',
   pref_history_limit: 'Eintraege pro Seite (Verlauf)',
   pref_gauge_type: 'Messgerattyp',
   pref_gauge_arc: 'Bogen',

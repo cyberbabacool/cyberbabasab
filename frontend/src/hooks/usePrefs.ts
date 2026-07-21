@@ -20,6 +20,7 @@ export interface Prefs {
   notifFail: boolean
   gaugeType: number
   historyLimit: number
+  maxSpeedMbps: number
 }
 
 const DEFAULT_PREFS: Prefs = {
@@ -36,6 +37,7 @@ const DEFAULT_PREFS: Prefs = {
   notifFail: false,
   gaugeType: 1,
   historyLimit: 25,
+  maxSpeedMbps: 150,
 }
 
 const STORAGE_KEY = 'cyberbabasab_prefs'

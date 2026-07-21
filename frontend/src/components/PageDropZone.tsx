@@ -19,7 +19,8 @@ export function PageDropZone({ children, onUploaded }: Props) {
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     dragCounter.current++
-    if (e.dataTransfer.types.includes('Files')) setIsDragging(true)
+    // Ignorer les drags internes (tuiles, texte, etc.)
+    if (e.dataTransfer.types.includes('Files') && !e.dataTransfer.types.includes('text/plain')) setIsDragging(true)
   }, [])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -39,11 +40,14 @@ export function PageDropZone({ children, onUploaded }: Props) {
     e.preventDefault()
     dragCounter.current = 0
     setIsDragging(false)
+    // Ne traiter que les vrais drops de fichiers (pas les drags de tuiles)
+    if (!e.dataTransfer.types.includes('Files')) return
     const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.nzb'))
-    if (files.length === 0) {
+    if (files.length === 0 && e.dataTransfer.files.length > 0) {
       toast(t.drop_only_nzb, 'warning')
       return
     }
+    if (files.length === 0) return
     setUploading(true)
     let success = 0
     for (const file of files) {

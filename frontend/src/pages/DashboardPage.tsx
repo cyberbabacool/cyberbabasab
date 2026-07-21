@@ -89,7 +89,7 @@ export function DashboardPage({ onNavigate }: Props) {
         <div className="flex items-center gap-2 text-slate-500 text-xs mb-2">
           <span className="uppercase tracking-widest">{t.dash_speed}</span>
         </div>
-        <SpeedGauge kbpersec={data.kbpersec} speedlimit={data.speedlimit} maxMbps={150} gaugeType={(prefs.gaugeType ?? 1) as any} />
+        <SpeedGauge kbpersec={data.kbpersec} speedlimit={data.speedlimit} maxMbps={prefs.maxSpeedMbps ?? 150} gaugeType={(prefs.gaugeType ?? 1) as any} />
         <div className="pt-3 border-t border-slate-800 mt-2">
           <SpeedSparkline points={speedPoints} />
         </div>

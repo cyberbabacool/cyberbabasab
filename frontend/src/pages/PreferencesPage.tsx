@@ -236,6 +236,16 @@ export function PreferencesPage() {
         </div>
 
         <div className="flex items-center justify-between">
+          <div className="text-sm text-slate-300">{t.pref_max_speed}</div>
+          <div className="flex items-center gap-2">
+            <input type="number" min="10" max="10000" value={prefs.maxSpeedMbps ?? 150}
+              onChange={e => update({ maxSpeedMbps: parseInt(e.target.value) || 150 })}
+              className="w-24 bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[var(--accent)]" />
+            <span className="text-xs text-slate-500">MB/s</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
           <div className="text-sm text-slate-300">{t.pref_history_limit}</div>
           <div className="flex gap-2">
             {HISTORY_LIMIT_OPTIONS.map(n => (
