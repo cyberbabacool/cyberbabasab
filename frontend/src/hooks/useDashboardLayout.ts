@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-export type TileId = 'speed' | 'storage' | 'progress'
+export type TileId = 'speed' | 'info' | 'queue'
 
-const DEFAULT_ORDER: TileId[] = ['speed', 'storage', 'progress']
+const DEFAULT_ORDER: TileId[] = ['speed', 'info', 'queue']
 const STORAGE_KEY = 'cyberbabasab_dashboard_layout'
 
 export function useDashboardLayout() {
   const [order, setOrder] = useState<TileId[]>(DEFAULT_ORDER)
   const [dragId, setDragId] = useState<TileId | null>(null)
-  // useRef pour acces synchrone depuis onDragOver (state React est async)
   const dragIdRef = useRef<TileId | null>(null)
   const orderRef  = useRef<TileId[]>(DEFAULT_ORDER)
 
@@ -32,7 +31,6 @@ export function useDashboardLayout() {
     dragIdRef.current = id
     setDragId(id)
     e.dataTransfer.effectAllowed = 'move'
-    // Requis par certains navigateurs pour activer le drag
     e.dataTransfer.setData('text/plain', id)
   }, [])
 
@@ -41,7 +39,6 @@ export function useDashboardLayout() {
     e.dataTransfer.dropEffect = 'move'
     const fromId = dragIdRef.current
     if (!fromId || fromId === overId) return
-    // Reordonner en live pendant le drag
     setOrder(current => {
       const fromIdx = current.indexOf(fromId)
       const toIdx   = current.indexOf(overId)
@@ -54,14 +51,11 @@ export function useDashboardLayout() {
     })
   }, [])
 
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-  }, [])
+  const onDrop = useCallback((e: React.DragEvent) => { e.preventDefault() }, [])
 
   const onDragEnd = useCallback(() => {
     dragIdRef.current = null
     setDragId(null)
-    // Persister seulement a la fin du drag
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(orderRef.current)) } catch {}
   }, [])
 
